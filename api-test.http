@@ -1,0 +1,110 @@
+### Bun User Account App — API Tests
+
+@baseUrl = http://localhost:3000
+@token = fake-jwt-2-1765525352023
+
+
+### 1. Register User
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "user2",
+  "email": "user2@mail.com",
+  "password": "password123"
+}
+
+
+
+### 2. Login User
+# @name Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "user2",
+  "password": "password123"
+}
+
+
+
+
+### 3. Create Account 1
+POST {{baseUrl}}/accounts
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "accountName": "Main Account",
+  "initialBalance": 100000
+}
+
+
+
+### 4. Create Account 2
+POST {{baseUrl}}/accounts
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "accountName": "Savings",
+  "initialBalance": 50000
+}
+
+
+
+### 5. Get All Accounts
+GET {{baseUrl}}/accounts
+Authorization: Bearer {{token}}
+
+
+
+### 6. Get One Account (ganti nomor di bawah)
+GET {{baseUrl}}/accounts/0000000002
+Authorization: Bearer {{token}}
+
+
+
+### 7. Deposit
+POST {{baseUrl}}/transactions/deposit
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "fromAccountNumber": "0000000002",
+  "amount": 25000,
+  "description": "Monthly deposit"
+}
+
+
+
+### 8. Withdrawal
+POST {{baseUrl}}/transactions/withdraw
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "fromAccountNumber": "0000000001",
+  "amount": 15000,
+  "description": "Cash withdrawal"
+}
+
+
+
+### 9. Transfer
+POST {{baseUrl}}/transactions/transfer
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "fromAccountNumber": "0000000001",
+  "toAccountNumber": "0000000002",
+  "amount": 20000,
+  "description": "Move to Savings"
+}
+
+
+
+### 10. Get Transaction History
+GET {{baseUrl}}/transactions?accountNumber=0000000001
+Authorization: Bearer {{token}}
