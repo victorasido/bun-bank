@@ -1,200 +1,73 @@
-import type {
-  DepositRequest,
-  WithdrawRequest,
-  TransferRequest,
-  TransactionResponse,
-} from "../dto/TransactionDTO";
-
 import { AppError } from "../errors/AppError";
 import {
-  findAccountById,
-  updateAccount,
+  createAccount,
+  findAccountsByUserId,
+  findAccountByNumber
 } from "../repo/accountRepo";
-
-import {
-  saveTransaction,
-  findTransactionsByAccountId,
-} from "../repo/transactionRepo";
-
+import type { CreateAccountRequest, AccountResponse } from "../dto/AccountDTO";
 import type { Account } from "../entities/Account";
-import type { Transaction } from "../entities/Transaction";
-import { TransactionType } from "../constants/TransactionType";
 
 /**
  * =========================
- * Helper
+ * Helper: Generate Random Account Number
  * =========================
  */
-function assertAccountOwner(
-  account: Account | undefined,
-  userId: number
-): Account {
-  if (!account) throw new AppError("Account not found", 404);
-  if (account.userId !== userId)
-    throw new AppError("Forbidden: account not yours", 403);
-  return account;
+function generateAccountNumber(): string {
+  // Bikin 10 digit angka random
+  return Math.floor(1000000000 + Math.random() * 9000000000).toString();
 }
 
-function toResponse(tx: Transaction): TransactionResponse {
+function toAccountResponse(account: Account): AccountResponse {
   return {
-    id: tx.id,
-    type: tx.type,
-    amount: tx.amount,
-    balanceBefore: tx.balanceBefore,
-    balanceAfter: tx.balanceAfter,
-    createdAt: tx.createdAt,
+    id: account.id,
+    userId: account.userId,
+    accountNumber: account.accountNumber,
+    accountName: account.accountName,
+    balance: Number(account.balance), // Pastikan jadi number
+    createdAt: account.createdAt,
   };
 }
 
 /**
  * =========================
- * Deposit
+ * Create Account Logic
  * =========================
  */
-export async function depositLogic(
+export async function createAccountLogic(
   userId: number,
-  payload: DepositRequest
-): Promise<TransactionResponse> {
-  const { accountId, amount } = payload;
+  payload: CreateAccountRequest
+): Promise<AccountResponse> {
+  const { accountName } = payload;
 
   if (!userId) throw new AppError("Unauthorized", 401);
-  if (!accountId || amount == null)
-    throw new AppError("accountId and amount are required", 400);
-  if (amount <= 0) throw new AppError("Amount must be positive", 400);
+  if (!accountName) throw new AppError("Account name is required", 400);
 
-  const account = assertAccountOwner(
-    await findAccountById(accountId),
-    userId
-  );
+  // 1. Generate nomor rekening unik
+  let accountNumber = generateAccountNumber();
+  let exists = await findAccountByNumber(accountNumber);
 
-  const balanceBefore = account.balance;
-  const balanceAfter = balanceBefore + amount;
+  // Retry kalau kebetulan nomornya kembar (tabrakan)
+  while (exists) {
+    accountNumber = generateAccountNumber();
+    exists = await findAccountByNumber(accountNumber);
+  }
 
-  await updateAccount({ ...account, balance: balanceAfter });
+  // 2. Simpan ke DB (Initial balance 0)
+  const newAccount = await createAccount(userId, accountNumber, accountName, 0);
 
-  const tx = await saveTransaction({
-    accountId: account.id,
-    type: TransactionType.DEPOSIT,
-    amount,
-    balanceBefore,
-    balanceAfter,
-  });
-
-  return toResponse(tx);
+  return toAccountResponse(newAccount);
 }
 
 /**
  * =========================
- * Withdraw
+ * Get My Accounts Logic
  * =========================
  */
-export async function withdrawLogic(
-  userId: number,
-  payload: WithdrawRequest
-): Promise<TransactionResponse> {
-  const { accountId, amount } = payload;
-
-  if (!userId) throw new AppError("Unauthorized", 401);
-  if (!accountId || amount == null)
-    throw new AppError("accountId and amount are required", 400);
-  if (amount <= 0) throw new AppError("Amount must be positive", 400);
-
-  const account = assertAccountOwner(
-    await findAccountById(accountId),
-    userId
-  );
-
-  const balanceBefore = account.balance;
-  if (balanceBefore < amount)
-    throw new AppError("Insufficient balance", 400);
-
-  const balanceAfter = balanceBefore - amount;
-
-  await updateAccount({ ...account, balance: balanceAfter });
-
-  const tx = await saveTransaction({
-    accountId: account.id,
-    type: TransactionType.WITHDRAW,
-    amount,
-    balanceBefore,
-    balanceAfter,
-  });
-
-  return toResponse(tx);
-}
-
-/**
- * =========================
- * Transfer
- * =========================
- */
-export async function transferLogic(
-  userId: number,
-  payload: TransferRequest
-): Promise<TransactionResponse[]> {
-  const { fromAccountId, toAccountId, amount } = payload;
-
-  if (!userId) throw new AppError("Unauthorized", 401);
-  if (!fromAccountId || !toAccountId || amount == null)
-    throw new AppError("Missing transfer fields", 400);
-  if (fromAccountId === toAccountId)
-    throw new AppError("Cannot transfer to same account", 400);
-  if (amount <= 0) throw new AppError("Amount must be positive", 400);
-
-  const from = assertAccountOwner(
-    await findAccountById(fromAccountId),
-    userId
-  );
-  const to = await findAccountById(toAccountId);
-
-  if (!to) throw new AppError("Destination account not found", 404);
-  if (from.balance < amount)
-    throw new AppError("Insufficient balance", 400);
-
-  const fromBefore = from.balance;
-  const toBefore = to.balance;
-
-  const fromAfter = fromBefore - amount;
-  const toAfter = toBefore + amount;
-
-  await updateAccount({ ...from, balance: fromAfter });
-  await updateAccount({ ...to, balance: toAfter });
-
-  const txOut = await saveTransaction({
-    accountId: from.id,
-    type: TransactionType.TRANSFER_OUT,
-    amount,
-    balanceBefore: fromBefore,
-    balanceAfter: fromAfter,
-  });
-
-  const txIn = await saveTransaction({
-    accountId: to.id,
-    type: TransactionType.TRANSFER_IN,
-    amount,
-    balanceBefore: toBefore,
-    balanceAfter: toAfter,
-  });
-
-  return [toResponse(txOut), toResponse(txIn)];
-}
-
-/**
- * =========================
- * History
- * =========================
- */
-export async function getTransactionHistoryLogic(
-  userId: number,
-  accountId: number
-): Promise<TransactionResponse[]> {
+export async function getMyAccountsLogic(
+  userId: number
+): Promise<AccountResponse[]> {
   if (!userId) throw new AppError("Unauthorized", 401);
 
-  const account = assertAccountOwner(
-    await findAccountById(accountId),
-    userId
-  );
-
-  const list = await findTransactionsByAccountId(account.id);
-  return list.map(toResponse);
+  const accounts = await findAccountsByUserId(userId);
+  return accounts.map(toAccountResponse);
 }

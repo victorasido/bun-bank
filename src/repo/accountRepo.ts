@@ -1,6 +1,10 @@
 import type { Account } from "../entities/Account";
 import { pool } from "../db/postgres";
 
+// Kita define tipe untuk Executor (bisa Pool atau Transaction Client)
+// Ini biar repo kita bisa dipake dalam mode biasa ATAU mode transaksi
+type DBExecutor = typeof pool; 
+
 /**
  * =========================
  * CREATE
@@ -10,9 +14,10 @@ export async function createAccount(
   userId: number,
   accountNumber: string,
   accountName: string,
-  initialBalance: number
+  initialBalance: number,
+  tx: DBExecutor = pool // Default pake pool (auto-commit) kalau gak ada transaksi
 ): Promise<Account> {
-  const result = await pool.query(
+  const result = await tx.query(
     `
     INSERT INTO accounts
       (user_id, account_number, account_name, balance)
@@ -38,9 +43,10 @@ export async function createAccount(
  * =========================
  */
 export async function findAccountById(
-  id: number
+  id: number,
+  tx: DBExecutor = pool
 ): Promise<Account | undefined> {
-  const result = await pool.query(
+  const result = await tx.query(
     `
     SELECT
       id,
@@ -64,9 +70,10 @@ export async function findAccountById(
  * =========================
  */
 export async function findAccountsByUserId(
-  userId: number
+  userId: number,
+  tx: DBExecutor = pool
 ): Promise<Account[]> {
-  const result = await pool.query(
+  const result = await tx.query(
     `
     SELECT
       id,
@@ -91,9 +98,10 @@ export async function findAccountsByUserId(
  * =========================
  */
 export async function findAccountByNumber(
-  accountNumber: string
+  accountNumber: string,
+  tx: DBExecutor = pool
 ): Promise<Account | undefined> {
-  const result = await pool.query(
+  const result = await tx.query(
     `
     SELECT
       id,
@@ -113,16 +121,21 @@ export async function findAccountByNumber(
 
 /**
  * =========================
- * UPDATE BALANCE
+ * UPDATE BALANCE (ATOMIC & SAFE)
  * =========================
+ * Perubahan:
+ * 1. Menerima 'amountChange' (selisih), bukan saldo akhir.
+ * 2. Menggunakan query 'balance = balance + $1' biar aman dari race condition.
  */
-export async function updateAccount(
-  account: Account
+export async function updateAccountBalance(
+  id: number,
+  amountChange: number,
+  tx: DBExecutor = pool
 ): Promise<Account> {
-  const result = await pool.query(
+  const result = await tx.query(
     `
     UPDATE accounts
-    SET balance = $1
+    SET balance = balance + $1
     WHERE id = $2
     RETURNING
       id,
@@ -132,7 +145,7 @@ export async function updateAccount(
       balance,
       created_at AS "createdAt"
     `,
-    [account.balance, account.id]
+    [amountChange, id]
   );
 
   if (!result.rows[0]) {

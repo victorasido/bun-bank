@@ -1,29 +1,29 @@
+import { TransactionType } from "../constants/TransactionType";
+
+export interface TransactionResponse {
+  id: number;
+  type: TransactionType | string;
+  amount: number;
+  balanceBefore: number;
+  balanceAfter: number;
+  description?: string | null;      // ✅ Baru
+  referenceNumber: string;          // ✅ Baru
+  createdAt: Date;
+}
+
 export interface DepositRequest {
   accountId: number;
   amount: number;
-  description?: string;
 }
 
 export interface WithdrawRequest {
   accountId: number;
   amount: number;
-  description?: string;
 }
 
 export interface TransferRequest {
   fromAccountId: number;
-  toAccountId: number;
+  toAccountNumber: string; // ✅ Ganti dari toAccountId (opsional) jadi wajib string
   amount: number;
-  description?: string;
-}
-
-export interface TransactionResponse {
-  id: number;
-  type: string;
-  amount: number;
-  balanceBefore: number;
-  balanceAfter: number;
-  description?: string;
-  referenceNumber?: string;
-  createdAt: Date;
+  description?: string;    // ✅ Baru
 }

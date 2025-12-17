@@ -1,11 +1,18 @@
 {
+  "name": "bun-bank",
+  "module": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts"
+  },
   "devDependencies": {
-    "@types/bun": "^1.3.4",
-    "bun-types": "^1.3.4",
-    "typescript": "^5.9.3"
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@types/pg": "^8.16.0",
-    "pg": "^8.16.3"
+    "pg": "^8.13.1"
   }
 }

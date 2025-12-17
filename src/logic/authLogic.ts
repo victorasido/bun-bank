@@ -5,29 +5,30 @@ import { AppError } from "../errors/AppError";
 import { signToken } from "../config/jwtUtil";
 
 // REGISTER
-export function registerLogic(payload: RegisterRequest): AuthResponse {
+export async function registerLogic(payload: RegisterRequest): Promise<AuthResponse> {
   const { username, email, password } = payload;
 
   if (!username || !email || !password) {
     throw new AppError("Username, email, and password are required", 400);
   }
 
-  // cek duplikasi username
-  const existingByUsername = findUserByUsername(username);
+  // ✅ Tambah 'await' karena repo sekarang async konek DB
+  const existingByUsername = await findUserByUsername(username);
   if (existingByUsername) {
     throw new AppError("Username already taken", 400);
   }
 
-  // cek duplikasi email
-  const existingByEmail = findUserByEmail(email);
+  // ✅ Tambah 'await'
+  const existingByEmail = await findUserByEmail(email);
   if (existingByEmail) {
     throw new AppError("Email already registered", 400);
   }
 
-  const passwordHash = hashPassword(password);
-  const user = createUser(username, email, passwordHash);
+  const passwordHash = await hashPassword(password); // Pastiin hashPassword support async/sync aman
+  
+  // ✅ Tambah 'await' saat create user
+  const user = await createUser(username, email, passwordHash);
 
-  // ⬇️ pakai signToken, bukan generateFakeToken
   const token = signToken(user.id);
 
   return {
@@ -37,24 +38,24 @@ export function registerLogic(payload: RegisterRequest): AuthResponse {
 }
 
 // LOGIN
-export function loginLogic(payload: LoginRequest): AuthResponse {
+export async function loginLogic(payload: LoginRequest): Promise<AuthResponse> {
   const { username, password } = payload;
 
   if (!username || !password) {
     throw new AppError("Username and password are required", 400);
   }
 
-  const user = findUserByUsername(username);
+  // ✅ Tambah 'await'
+  const user = await findUserByUsername(username);
   if (!user) {
     throw new AppError("Invalid credentials", 401);
   }
 
-  const ok = verifyPassword(password, user.passwordHash);
+  const ok = await verifyPassword(password, user.passwordHash);
   if (!ok) {
     throw new AppError("Invalid credentials", 401);
   }
 
-  // ⬇️ sama, pakai signToken
   const token = signToken(user.id);
 
   return {

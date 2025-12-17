@@ -5,6 +5,7 @@ export interface CreateAccountRequest {
 
 export interface AccountResponse {
   id: number;
+  userId: number;
   accountNumber: string;
   accountName?: string;
   balance: number;

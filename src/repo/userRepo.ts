@@ -1,28 +1,104 @@
+import { pool } from "../db/postgres";
 import type { User } from "../entities/User";
 
-let users: User[] = [];
-let nextUserId = 1;
-
-export function createUser(username: string, email: string, passwordHash: string): User {
-  const user: User = {
-    id: nextUserId++,
-    username,
-    email,
-    passwordHash,
-    createdAt: new Date(),
-  };
-  users.push(user);
-  return user;
+/**
+ * =========================
+ * CREATE USER
+ * =========================
+ */
+export async function createUser(
+  username: string,
+  email: string,
+  passwordHash: string
+): Promise<User> {
+  const result = await pool.query(
+    `
+    INSERT INTO users (username, email, password_hash)
+    VALUES ($1, $2, $3)
+    RETURNING 
+      id, 
+      username, 
+      email, 
+      password_hash AS "passwordHash", 
+      created_at AS "createdAt"
+    `,
+    [username, email, passwordHash]
+  );
+  
+  return result.rows[0];
 }
 
-export function findUserByUsername(username: string): User | undefined {
-  return users.find((u) => u.username === username);
+/**
+ * =========================
+ * FIND BY USERNAME
+ * =========================
+ */
+export async function findUserByUsername(
+  username: string
+): Promise<User | undefined> {
+  const result = await pool.query(
+    `
+    SELECT 
+      id, 
+      username, 
+      email, 
+      password_hash AS "passwordHash", 
+      created_at AS "createdAt"
+    FROM users 
+    WHERE username = $1
+    `,
+    [username]
+  );
+
+  return result.rows[0];
 }
 
-export function findUserByEmail(email: string): User | undefined {
-  return users.find((u) => u.email === email);
+/**
+ * =========================
+ * FIND BY EMAIL
+ * =========================
+ */
+export async function findUserByEmail(
+  email: string
+): Promise<User | undefined> {
+  const result = await pool.query(
+    `
+    SELECT 
+      id, 
+      username, 
+      email, 
+      password_hash AS "passwordHash", 
+      created_at AS "createdAt"
+    FROM users 
+    WHERE email = $1
+    `,
+    [email]
+  );
+
+  return result.rows[0];
 }
 
-export function findUserById(id: number): User | undefined {
-  return users.find((u) => u.id === id);
+/**
+ * =========================
+ * FIND BY ID
+ * =========================
+ */
+export async function findUserById(
+  id: number
+): Promise<User | undefined> {
+  const result = await pool.query(
+    `
+    SELECT 
+      id, 
+      username, 
+      email, 
+      password_hash AS "passwordHash", 
+      created_at AS "createdAt"
+    FROM users 
+    WHERE id = $1
+    `,
+    [id]
+  );
+
+  return result.rows[0];
 }
