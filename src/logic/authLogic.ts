@@ -6,28 +6,27 @@ import { signToken } from "../config/jwtUtil";
 
 // REGISTER
 export async function registerLogic(payload: RegisterRequest): Promise<AuthResponse> {
-  const { username, email, password } = payload;
+  // ✅ Ambil fullName dari payload
+  const { username, email, password, fullName } = payload;
 
   if (!username || !email || !password) {
     throw new AppError("Username, email, and password are required", 400);
   }
 
-  // ✅ Tambah 'await' karena repo sekarang async konek DB
   const existingByUsername = await findUserByUsername(username);
   if (existingByUsername) {
     throw new AppError("Username already taken", 400);
   }
 
-  // ✅ Tambah 'await'
   const existingByEmail = await findUserByEmail(email);
   if (existingByEmail) {
     throw new AppError("Email already registered", 400);
   }
 
-  const passwordHash = await hashPassword(password); // Pastiin hashPassword support async/sync aman
+  const passwordHash = await hashPassword(password);
   
-  // ✅ Tambah 'await' saat create user
-  const user = await createUser(username, email, passwordHash);
+  // ✅ Pass fullName ke createUser
+  const user = await createUser(username, email, passwordHash, fullName);
 
   const token = signToken(user.id);
 
@@ -45,7 +44,6 @@ export async function loginLogic(payload: LoginRequest): Promise<AuthResponse> {
     throw new AppError("Username and password are required", 400);
   }
 
-  // ✅ Tambah 'await'
   const user = await findUserByUsername(username);
   if (!user) {
     throw new AppError("Invalid credentials", 401);

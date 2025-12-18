@@ -9,20 +9,22 @@ import type { User } from "../entities/User";
 export async function createUser(
   username: string,
   email: string,
-  passwordHash: string
+  passwordHash: string,
+  fullName?: string // ✅ Terima parameter fullName
 ): Promise<User> {
   const result = await pool.query(
     `
-    INSERT INTO users (username, email, password_hash)
-    VALUES ($1, $2, $3)
+    INSERT INTO users (username, email, password_hash, full_name)
+    VALUES ($1, $2, $3, $4)
     RETURNING 
       id, 
       username, 
       email, 
       password_hash AS "passwordHash", 
+      full_name AS "fullName", 
       created_at AS "createdAt"
     `,
-    [username, email, passwordHash]
+    [username, email, passwordHash, fullName || null]
   );
   
   return result.rows[0];
@@ -43,6 +45,7 @@ export async function findUserByUsername(
       username, 
       email, 
       password_hash AS "passwordHash", 
+      full_name AS "fullName",
       created_at AS "createdAt"
     FROM users 
     WHERE username = $1
@@ -68,6 +71,7 @@ export async function findUserByEmail(
       username, 
       email, 
       password_hash AS "passwordHash", 
+      full_name AS "fullName",
       created_at AS "createdAt"
     FROM users 
     WHERE email = $1
@@ -93,6 +97,7 @@ export async function findUserById(
       username, 
       email, 
       password_hash AS "passwordHash", 
+      full_name AS "fullName",
       created_at AS "createdAt"
     FROM users 
     WHERE id = $1
