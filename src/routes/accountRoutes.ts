@@ -10,12 +10,12 @@ export async function accountRouter(req: Request): Promise<Response> {
   try {
     // =====================
     // CREATE ACCOUNT
-    // POST /accounts
     // =====================
     if (pathname === "/accounts" && req.method === "POST") {
-      const userId = getUserIdFromRequest(req);
+      // ✅ PERUBAHAN: Tambah 'await'
+      const userId = await getUserIdFromRequest(req); 
+      
       const body = (await req.json()) as CreateAccountRequest;
-
       const result = await createAccountLogic(userId, body);
 
       return jsonResponse(
@@ -30,10 +30,10 @@ export async function accountRouter(req: Request): Promise<Response> {
 
     // =====================
     // GET MY ACCOUNTS
-    // GET /accounts
     // =====================
     if (pathname === "/accounts" && req.method === "GET") {
-      const userId = getUserIdFromRequest(req);
+      // ✅ PERUBAHAN: Tambah 'await'
+      const userId = await getUserIdFromRequest(req);
 
       const result = await getMyAccountsLogic(userId);
 

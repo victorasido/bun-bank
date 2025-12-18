@@ -4,10 +4,8 @@ import {
   transferLogic,
   getTransactionHistoryLogic,
 } from "../logic/transactionLogic";
-
 import { jsonResponse, handleError } from "../errors/errorHandler";
 import { getUserIdFromRequest } from "../middleware/authMiddleware";
-
 import type {
   DepositRequest,
   WithdrawRequest,
@@ -23,9 +21,10 @@ export async function transactionRouter(req: Request): Promise<Response> {
     // DEPOSIT
     // =====================
     if (pathname === "/transactions/deposit" && req.method === "POST") {
-      const userId = getUserIdFromRequest(req);
+      // ✅ PERUBAHAN: Tambah 'await'
+      const userId = await getUserIdFromRequest(req);
+      
       const body = (await req.json()) as DepositRequest;
-
       const result = await depositLogic(userId, body);
 
       return jsonResponse(
@@ -38,9 +37,10 @@ export async function transactionRouter(req: Request): Promise<Response> {
     // WITHDRAW
     // =====================
     if (pathname === "/transactions/withdraw" && req.method === "POST") {
-      const userId = getUserIdFromRequest(req);
+      // ✅ PERUBAHAN: Tambah 'await'
+      const userId = await getUserIdFromRequest(req);
+      
       const body = (await req.json()) as WithdrawRequest;
-
       const result = await withdrawLogic(userId, body);
 
       return jsonResponse(
@@ -53,9 +53,10 @@ export async function transactionRouter(req: Request): Promise<Response> {
     // TRANSFER
     // =====================
     if (pathname === "/transactions/transfer" && req.method === "POST") {
-      const userId = getUserIdFromRequest(req);
+      // ✅ PERUBAHAN: Tambah 'await'
+      const userId = await getUserIdFromRequest(req);
+      
       const body = (await req.json()) as TransferRequest;
-
       const result = await transferLogic(userId, body);
 
       return jsonResponse(
@@ -66,13 +67,12 @@ export async function transactionRouter(req: Request): Promise<Response> {
 
     // =====================
     // TRANSACTION HISTORY
-    // GET /transactions/:accountId
     // =====================
     if (pathname.startsWith("/transactions/") && req.method === "GET") {
-      const userId = getUserIdFromRequest(req);
+      // ✅ PERUBAHAN: Tambah 'await'
+      const userId = await getUserIdFromRequest(req);
 
       const accountIdStr = pathname.split("/")[2];
-
       if (!accountIdStr) {
         return jsonResponse(
           { success: false, message: "Account id is required" },
@@ -88,10 +88,7 @@ export async function transactionRouter(req: Request): Promise<Response> {
         );
       }
 
-      const history = await getTransactionHistoryLogic(
-        userId,
-        accountId
-      );
+      const history = await getTransactionHistoryLogic(userId, accountId);
 
       return jsonResponse(
         {

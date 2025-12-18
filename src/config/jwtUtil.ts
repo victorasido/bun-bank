@@ -1,20 +1,24 @@
-// src/config/jwtUtil.ts
+import { SignJWT, jwtVerify } from "jose";
 
-// NOTE: ini cuma placeholder untuk Goal 4.
-// Goal 5 nanti bisa diisi pakai library JWT (misal jose/jsonwebtoken, dll).
+// Kunci rahasia buat tanda tangan digital (Secret Key)
+// Di production, ini WAJIB dari process.env.JWT_SECRET
+const SECRET_KEY = new TextEncoder().encode(
+  process.env.JWT_SECRET || "kunci_rahasia_bni_super_aman_123"
+);
 
-export function signToken(userId: number): string {
-  // TODO: implement JWT real di Goal 5
-  return `fake-jwt-${userId}-${Date.now()}`;
+export async function signToken(userId: number): Promise<string> {
+  return await new SignJWT({ userId })
+    .setProtectedHeader({ alg: "HS256" }) // Algoritma hashing
+    .setIssuedAt()
+    .setExpirationTime("2h") // Token basi dalam 2 jam
+    .sign(SECRET_KEY);
 }
 
-export function verifyToken(token: string): { userId: number } {
-  // TODO: implement JWT verify di Goal 5
-  // sementara untuk demo:
-  if (!token.startsWith("fake-jwt-")) {
-    throw new Error("Invalid token");
+export async function verifyToken(token: string): Promise<{ userId: number }> {
+  try {
+    const { payload } = await jwtVerify(token, SECRET_KEY);
+    return { userId: Number(payload.userId) };
+  } catch (err) {
+    throw new Error("Invalid or expired token");
   }
-  const parts = token.split("-");
-  const userId = Number(parts[2]);
-  return { userId };
 }

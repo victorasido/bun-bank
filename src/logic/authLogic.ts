@@ -2,11 +2,10 @@ import type { RegisterRequest, LoginRequest, AuthResponse } from "../dto/AuthDTO
 import { createUser, findUserByUsername, findUserByEmail } from "../repo/userRepo";
 import { hashPassword, verifyPassword } from "./passwordUtil";
 import { AppError } from "../errors/AppError";
-import { signToken } from "../config/jwtUtil";
+import { signToken } from "../config/jwtUtil"; // Pastikan import ini aman
 
 // REGISTER
 export async function registerLogic(payload: RegisterRequest): Promise<AuthResponse> {
-  // ✅ Ambil fullName dari payload
   const { username, email, password, fullName } = payload;
 
   if (!username || !email || !password) {
@@ -24,11 +23,10 @@ export async function registerLogic(payload: RegisterRequest): Promise<AuthRespo
   }
 
   const passwordHash = await hashPassword(password);
-  
-  // ✅ Pass fullName ke createUser
   const user = await createUser(username, email, passwordHash, fullName);
 
-  const token = signToken(user.id);
+  // ✅ PERUBAHAN DI SINI: Tambah 'await'
+  const token = await signToken(user.id);
 
   return {
     token,
@@ -54,7 +52,8 @@ export async function loginLogic(payload: LoginRequest): Promise<AuthResponse> {
     throw new AppError("Invalid credentials", 401);
   }
 
-  const token = signToken(user.id);
+  // ✅ PERUBAHAN DI SINI: Tambah 'await'
+  const token = await signToken(user.id);
 
   return {
     token,
