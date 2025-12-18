@@ -10,7 +10,7 @@ export async function signToken(userId: number): Promise<string> {
   return await new SignJWT({ userId })
     .setProtectedHeader({ alg: "HS256" }) // Algoritma hashing
     .setIssuedAt()
-    .setExpirationTime("2h") // Token basi dalam 2 jam
+    .setExpirationTime("2m") // Token basi dalam 2 menit
     .sign(SECRET_KEY);
 }
 
