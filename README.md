@@ -57,7 +57,7 @@ This app uses a **Monolithic Layered Architecture** — simple, readable, and sc
 3. **Business Logic (`src/logic`)**
    Core rules, validations, and transaction flow
 
-4. **Repository (`src/repo`)**
+4. **Service (`src/service`)**
    Raw SQL queries using `pg`
 
 5. **Database Layer (`src/db`)**
@@ -193,7 +193,7 @@ src/
 ├── errors/         # Custom errors
 ├── logic/          # Business logic
 ├── middleware/     # Auth middleware
-├── repo/           # Raw SQL queries
+├── service/        # Raw SQL queries
 ├── routes/         # API routes
 └── types/          # Shared types
 ```
@@ -210,6 +210,103 @@ src/
   * API design
   * Bun performance
 
+L.
+
+## 🏗️ Architecture Overview
+
+This backend application is built with **Bun**, **TypeScript**, and **PostgreSQL**, following a **clean, layered architecture** to ensure separation of concerns, maintainability, and scalability.
+
+### Built With
+
+* ⚡ **Bun** — High-performance JavaScript runtime
+* 🟦 **TypeScript** — Type-safe backend development
+* 🐘 **PostgreSQL** — Relational database (Dockerized)
+
 ---
 
-Built with ❤️ using Bun, TypeScript, and PostgreSQL.
+### High-Level Architecture Flow
+
+```text
++----------------------+
+|   USER / CLIENT      |
++----------------------+
+           |
+           v
++----------------------+
+|     BUN SERVER       |
+|  (Single Process)    |
++----------------------+
+           |
+           v
++----------------------+
+|      IO LAYER        |
+|   src/routes         |
+|   Controllers        |
++----------------------+
+           |
+           v
++----------------------+
+|     LOGIC LAYER      |
+|   src/logic          |
+|   Business Rules     |
+|   Atomic Tx          |
++----------------------+
+           |
+           v
++----------------------+
+|  DEPENDENCY LAYER    |
+|   src/repo           |
+|   Repositories       |
++----------------------+
+           |
+           v
++----------------------+
+|   POSTGRESQL (DB)    |
+|   Docker Container   |
+|                      |
++----------------------+
+```
+
+---
+
+### Layer Responsibilities
+
+#### 1. IO Layer (`src/routes`)
+
+* Handles HTTP requests and responses
+* Acts as the entry point of the application
+* Delegates processing to the Logic Layer
+* Contains controllers only (no business rules)
+
+#### 2. Logic Layer (`src/logic`)
+
+* Contains core business rules
+* Orchestrates use cases (deposit, withdrawal, transfer, auth)
+* Manages **atomic transactions** to ensure data consistency
+* Independent from HTTP and database implementations
+
+#### 3. Dependency Layer (`src/repo`)
+
+* Handles database access logic
+* Implements repositories (User, Account, Transaction)
+* Contains database entities and configuration
+* No business rules allowed
+
+#### 4. Database
+
+* PostgreSQL running inside a Docker container
+* Communicates via TCP port `5432`
+* Stores users, accounts, and transaction data
+
+---
+
+### Design Principles
+
+* ➡️ **Unidirectional dependency**: IO → Logic → Repository → DB
+* 🧠 Business logic is isolated and testable
+* 🔒 Data consistency ensured through atomic transactions
+* 🧼 Clean separation between delivery, domain, and data access
+
+This architecture is inspired by **Clean Architecture** and adapted for a **Bun + TypeScript** backend environment.
+
+

@@ -1,5 +1,5 @@
 import type { RegisterRequest, LoginRequest, AuthResponse } from "../dto/AuthDTO";
-import { createUser, findUserByUsername, findUserByEmail } from "../repo/userRepo";
+import { createUser, findUserByUsername, findUserByEmail } from "../service/userService";
 import { hashPassword, verifyPassword } from "./passwordUtil";
 import { AppError } from "../errors/AppError";
 import { signToken } from "../config/jwtUtil"; // Pastikan import ini aman

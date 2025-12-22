@@ -1,16 +1,14 @@
 import { SignJWT, jwtVerify } from "jose";
+import { config } from "./appConfig";
 
-// Kunci rahasia buat tanda tangan digital (Secret Key)
-// Di production, ini WAJIB dari process.env.JWT_SECRET
-const SECRET_KEY = new TextEncoder().encode(
-  process.env.JWT_SECRET || "kunci_rahasia_bni_super_aman_123"
-);
+// Encode secret sekali aja di awal
+const SECRET_KEY = new TextEncoder().encode(config.jwt.secret);
 
 export async function signToken(userId: number): Promise<string> {
   return await new SignJWT({ userId })
-    .setProtectedHeader({ alg: "HS256" }) // Algoritma hashing
+    .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("2m") // Token basi dalam 2 menit
+    .setExpirationTime(config.jwt.expiration) // Pake config
     .sign(SECRET_KEY);
 }
 

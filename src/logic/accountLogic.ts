@@ -3,7 +3,7 @@ import {
   createAccount,
   findAccountsByUserId,
   findAccountByNumber
-} from "../repo/accountRepo";
+} from "../service/accountService";
 import type { CreateAccountRequest, AccountResponse } from "../dto/AccountDTO";
 import type { Account } from "../entities/Account";
 

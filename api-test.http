@@ -1,7 +1,15 @@
+### ============================================================================
+### Bank Application API Tests (Bun Version)
+### Style: Mentor (Variables & Automation)
+### ============================================================================
+
+@baseUrl = http://localhost:3000
+@token = {{Login.response.body.data.token}}
+
 ### ========================================
 ### 1. REGISTER USER
 ### ========================================
-POST http://localhost:3000/auth/register
+POST {{baseUrl}}/auth/register
 Content-Type: application/json
 
 {
@@ -12,56 +20,51 @@ Content-Type: application/json
 }
 
 ### ========================================
-### 2. LOGIN
+### 2. LOGIN (AUTOMATED TOKEN)
 ### ========================================
 # @name Login
-POST http://localhost:3000/auth/login
+POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-  "username": "victor_final",
+  "username": "user1",
   "password": "password123"
 }
 
 ### ========================================
-### SET VARIABLE TOKEN
-### ========================================
-@token = {{Login.response.body.data.token}}
-
-### ========================================
 ### 3. BUAT AKUN BANK
 ### ========================================
-POST http://localhost:3000/accounts
+POST {{baseUrl}}/accounts
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "accountName": "Tabungan Utama"
+  "accountName": "Tabungan Masa Depan"
 }
 
 ### ========================================
 ### 4. LIHAT DAFTAR AKUN
 ### ========================================
-GET http://localhost:3000/accounts
+# Cek 'accountNumber' di response ini buat transfer nanti
+GET {{baseUrl}}/accounts
 Authorization: Bearer {{token}}
 
 ### ========================================
 ### 5. DEPOSIT
 ### ========================================
-# Ganti accountId dengan ID asli dari response No. 4
-POST http://localhost:3000/transactions/deposit
+POST {{baseUrl}}/transactions/deposit
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
   "accountId": 1, 
-  "amount": 500000
+  "amount": 1000000
 }
 
 ### ========================================
 ### 6. WITHDRAW
 ### ========================================
-POST http://localhost:3000/transactions/withdraw
+POST {{baseUrl}}/transactions/withdraw
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -71,22 +74,47 @@ Authorization: Bearer {{token}}
 }
 
 ### ========================================
-### 7. TRANSFER
+### 7. TRANSFER (Updated Logic)
 ### ========================================
-# Pastikan 'toAccountNumber' valid dan beda akun
-POST http://localhost:3000/transactions/transfer
+# Pastikan ganti nomor rekening tujuan dengan yang valid (buat user lain dulu kalau perlu)
+POST {{baseUrl}}/transactions/transfer
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "fromAccountId": 1,
-  "toAccountNumber": "NOMOR_REKENING_TUJUAN",
-  "amount": 50000,
-  "description": "Bayar hutang"
+  "fromAccountNumber": "MASUKKAN_REKENING_PENGIRIM",
+  "toAccountNumber": "MASUKKAN_REKENING_TUJUAN",
+  "amount": 75000,
+  "description": "Bayar cicilan otomatis"
 }
 
 ### ========================================
 ### 8. CEK HISTORY
 ### ========================================
-GET http://localhost:3000/transactions/1
+GET {{baseUrl}}/transactions/1
 Authorization: Bearer {{token}}
+
+### ========================================
+### 9. ERROR HANDLING TESTS
+### ========================================
+
+### Login Failed (Wrong Password)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "victor_pro",
+  "password": "wrongpassword"
+}
+
+### Transfer to Self (Should Fail)
+POST {{baseUrl}}/transactions/transfer
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "fromAccountNumber": "1234567890",
+  "toAccountNumber": "1234567890",
+  "amount": 100,
+  "description": "Transfer ke diri sendiri"
+}

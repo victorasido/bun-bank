@@ -22,7 +22,7 @@ export interface WithdrawRequest {
 }
 
 export interface TransferRequest {
-  fromAccountId: number;
+  fromAccountNumber: string;
   toAccountNumber: string; // ✅ Ganti dari toAccountId (opsional) jadi wajib string
   amount: number;
   description?: string;    // ✅ Baru
