@@ -1,4 +1,3 @@
-// src/errors/errorHandler.ts
 import { AppError } from "./AppError";
 
 export function jsonResponse(data: any, status = 200): Response {

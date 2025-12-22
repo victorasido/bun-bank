@@ -3,6 +3,5 @@ export interface User {
   username: string;
   email: string;
   passwordHash: string;
-  fullName?: string | null; // ✅ Tambahan baru
-  createdAt: Date;
+  fullName?: string | null; 
 }

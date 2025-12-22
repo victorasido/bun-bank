@@ -1,76 +1,47 @@
-// src/index.ts
+//import module
+import { Hono } from "hono";
+import { logger } from "hono/logger";
 
-// supaya TypeScript tidak complain soal Bun
-declare const Bun: any;
+//import routes
+import authRoutes from "./routes/authRoutes";
+import accountRoutes from "./routes/accountRoutes";
+import transactionRoutes from "./routes/transactionRoutes";
 
-import { authRouter } from "./routes/authRoutes";
-import { accountRouter } from "./routes/accountRoutes";
-import { transactionRouter } from "./routes/transactionRoutes";
+const app = new Hono();
 
-Bun.serve({
-  port: 3000,
+//logger middleware
+app.use("*", logger());
 
-  async fetch(req: Request) {
-    const url = new URL(req.url);
-    const { pathname } = url;
-
-    const json = (data: any, status = 200) =>
-      new Response(JSON.stringify(data), {
-        status,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-    try {
-      // =========================
-      // Health check
-      // =========================
-      if (pathname === "/health") {
-        return json({
-          status: "ok",
-          app: "bun-user-account-app",
-          bun: Bun?.version ?? "unknown",
-        });
-      }
-
-      // =========================
-      // Auth routes
-      // =========================
-      if (pathname.startsWith("/auth")) {
-        return await authRouter(req);
-      }
-
-      // =========================
-      // Account routes
-      // =========================
-      if (pathname.startsWith("/accounts")) {
-        return await accountRouter(req);
-      }
-
-      // =========================
-      // Transaction routes
-      // =========================
-      if (pathname.startsWith("/transactions")) {
-        return await transactionRouter(req);
-      }
-
-      // =========================
-      // Fallback
-      // =========================
-      return json({ error: "Not found" }, 404);
-    } catch (err: any) {
-      console.error("❌ Unhandled error:", err);
-
-      return json(
-        {
-          error: "Internal Server Error",
-          message: err?.message ?? "Unknown error",
-        },
-        500
-      );
-    }
-  },
+//app error handler
+app.onError((err, c) => {
+  console.error(`❌ Error: ${err.message}`);
+  
+  // Default status 500, kecuali error-nya punya status code sendiri
+  const status = (err as any).status || 500;
+  return c.json({
+    success: false,
+    message: err.message || "Internal Server Error",
+  }, status);
 });
 
+// 3. HEALTH CHECK
+app.get("/health", (c) => {
+  return c.json({
+    status: "ok",
+    app: "bun-bank-hono",
+    version: "1.0.0"
+  });
+});
+
+// route mounting
+app.route("/auth", authRoutes);
+app.route("/accounts", accountRoutes);
+app.route("/transactions", transactionRoutes);
+
+//start server
 console.log("🚀 Server running on http://localhost:3000");
+
+export default {
+  port: 3000,
+  fetch: app.fetch, // Ini yang bikin Hono jalan di atas Bun
+};

@@ -1,107 +1,79 @@
+//import semua yang dibutuhkan
+import { Hono } from "hono";
 import {
   depositLogic,
   withdrawLogic,
   transferLogic,
   getTransactionHistoryLogic,
 } from "../logic/transactionLogic";
-import { jsonResponse, handleError } from "../errors/errorHandler";
-import { getUserIdFromRequest } from "../middleware/authMiddleware";
+import { authMiddleware } from "../middleware/authMiddleware";
 import type {
   DepositRequest,
   WithdrawRequest,
   TransferRequest,
 } from "../dto/TransactionDTO";
 
-export async function transactionRouter(req: Request): Promise<Response> {
-  const url = new URL(req.url);
-  const { pathname } = url;
+//context c yang bisa di isi data macem2
+type AuthEnv = {
+  Variables: {
+    user: { userId: number };
+  };
+};
 
-  try {
-    // =====================
-    // DEPOSIT
-    // =====================
-    if (pathname === "/transactions/deposit" && req.method === "POST") {
-      // ✅ PERUBAHAN: Tambah 'await'
-      const userId = await getUserIdFromRequest(req);
-      
-      const body = (await req.json()) as DepositRequest;
-      const result = await depositLogic(userId, body);
+//router hono denagn authenv yang udah di definisin diatas
+const app = new Hono<AuthEnv>();
 
-      return jsonResponse(
-        { success: true, message: "Deposit successful", data: result },
-        201
-      );
-    }
+//pasang middlereware dari authMiddleware
+app.use("*", authMiddleware);
 
-    // =====================
-    // WITHDRAW
-    // =====================
-    if (pathname === "/transactions/withdraw" && req.method === "POST") {
-      // ✅ PERUBAHAN: Tambah 'await'
-      const userId = await getUserIdFromRequest(req);
-      
-      const body = (await req.json()) as WithdrawRequest;
-      const result = await withdrawLogic(userId, body);
+//post/transactions/deposit
+app.post("/deposit", async (c) => {
+  const user = c.get("user");
+  const body = await c.req.json<DepositRequest>();
+  
+  const result = await depositLogic(user.userId, body);
 
-      return jsonResponse(
-        { success: true, message: "Withdraw successful", data: result },
-        201
-      );
-    }
+  return c.json({ success: true, message: "Deposit successful", data: result }, 201);
+});
 
-    // =====================
-    // TRANSFER
-    // =====================
-    if (pathname === "/transactions/transfer" && req.method === "POST") {
-      // ✅ PERUBAHAN: Tambah 'await'
-      const userId = await getUserIdFromRequest(req);
-      
-      const body = (await req.json()) as TransferRequest;
-      const result = await transferLogic(userId, body);
+//post/transactions/withdraw
+app.post("/withdraw", async (c) => {
+  const user = c.get("user");
+  const body = await c.req.json<WithdrawRequest>();
+  
+  const result = await withdrawLogic(user.userId, body);
 
-      return jsonResponse(
-        { success: true, message: "Transfer successful", data: result },
-        201
-      );
-    }
+  return c.json({ success: true, message: "Withdraw successful", data: result }, 201);
+});
 
-    // =====================
-    // TRANSACTION HISTORY
-    // =====================
-    if (pathname.startsWith("/transactions/") && req.method === "GET") {
-      // ✅ PERUBAHAN: Tambah 'await'
-      const userId = await getUserIdFromRequest(req);
+//post/transactions/transfer
+app.post("/transfer", async (c) => {
+  const user = c.get("user");
+  const body = await c.req.json<TransferRequest>();
+  
+  const result = await transferLogic(user.userId, body);
 
-      const accountIdStr = pathname.split("/")[2];
-      if (!accountIdStr) {
-        return jsonResponse(
-          { success: false, message: "Account id is required" },
-          400
-        );
-      }
+  return c.json({ success: true, message: "Transfer successful", data: result }, 201);
+});
 
-      const accountId = Number(accountIdStr);
-      if (Number.isNaN(accountId)) {
-        return jsonResponse(
-          { success: false, message: "Invalid account id" },
-          400
-        );
-      }
+//get/transactions/:accountId (History)
+app.get("/:accountId", async (c) => {
+  const user = c.get("user");
+  
+  // Ambil parameter accountId dari URL
+  const accountId = Number(c.req.param("accountId"));
 
-      const history = await getTransactionHistoryLogic(userId, accountId);
-
-      return jsonResponse(
-        {
-          success: true,
-          message: "Transaction history fetched",
-          data: history,
-        },
-        200
-      );
-    }
-
-    return jsonResponse({ success: false, message: "Not found" }, 404);
-  } catch (err) {
-    return handleError(err);
+  if (Number.isNaN(accountId)) {
+    return c.json({ success: false, message: "Invalid account ID" }, 400);
   }
-}
+
+  const history = await getTransactionHistoryLogic(user.userId, accountId);
+
+  return c.json({
+    success: true,
+    message: "Transaction history fetched",
+    data: history,
+  }, 200);
+});
+
+export default app;

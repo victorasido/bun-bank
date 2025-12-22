@@ -1,54 +1,45 @@
+//impost necessary modules and types 
+import { Hono } from "hono";
 import { createAccountLogic, getMyAccountsLogic } from "../logic/accountLogic";
-import { jsonResponse, handleError } from "../errors/errorHandler";
-import { getUserIdFromRequest } from "../middleware/authMiddleware";
+import { authMiddleware } from "../middleware/authMiddleware";
 import type { CreateAccountRequest } from "../dto/AccountDTO";
 
-export async function accountRouter(req: Request): Promise<Response> {
-  const url = new URL(req.url);
-  const { pathname } = url;
+//context c yang bisa di isi data macem2
+type AuthEnv = {
+  Variables: {
+    user: { userId: number };
+  };
+};
 
-  try {
-    // =====================
-    // CREATE ACCOUNT
-    // =====================
-    if (pathname === "/accounts" && req.method === "POST") {
-      // ✅ PERUBAHAN: Tambah 'await'
-      const userId = await getUserIdFromRequest(req); 
-      
-      const body = (await req.json()) as CreateAccountRequest;
-      const result = await createAccountLogic(userId, body);
+//router hono denagn authenv yang udah di definisin diatas
+const app = new Hono<AuthEnv>();
 
-      return jsonResponse(
-        {
-          success: true,
-          message: "Account created successfully",
-          data: result,
-        },
-        201
-      );
-    }
+//pasang middlereware dari authMiddleware
+app.use("*", authMiddleware);
 
-    // =====================
-    // GET MY ACCOUNTS
-    // =====================
-    if (pathname === "/accounts" && req.method === "GET") {
-      // ✅ PERUBAHAN: Tambah 'await'
-      const userId = await getUserIdFromRequest(req);
+//post/account (Create Account)
+app.post("/", async (c) => {
+  const user = c.get("user"); //ambil data user dengan c.get
+  const body = await c.req.json<CreateAccountRequest>(); //ambil body request
+  const result = await createAccountLogic(user.userId, body); //panggil logic create account
 
-      const result = await getMyAccountsLogic(userId);
+  return c.json({
+    success: true,
+    message: "Account created successfully",
+    data: result,
+  }, 201);
+});
 
-      return jsonResponse(
-        {
-          success: true,
-          message: "Accounts fetched",
-          data: result,
-        },
-        200
-      );
-    }
+// GET /accounts (List My Accounts)
+app.get("/", async (c) => {
+  const user = c.get("user");
+  const result = await getMyAccountsLogic(user.userId); //panggil logic get my accounts
 
-    return jsonResponse({ success: false, message: "Not found" }, 404);
-  } catch (err) {
-    return handleError(err);
-  }
-}
+  return c.json({
+    success: true,
+    message: "Accounts fetched",
+    data: result,
+  }, 200);
+}); 
+
+export default app;

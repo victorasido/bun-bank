@@ -1,30 +1,38 @@
-import { AppError } from "../errors/AppError";
+// src/middleware/authMiddleware.ts
+import { createMiddleware } from "hono/factory";
 import { verifyToken } from "../config/jwtUtil";
 
-export interface AuthPayload {
-  userId: number;
-}
+// Ini tipe data buat Context Hono biar dia tau ada variabel 'user'
+type Env = {
+  Variables: {
+    user: { userId: number };
+  };
+};
 
-// ✅ Ubah jadi Async Function
-export async function getUserIdFromRequest(req: Request): Promise<number> {
-  const authHeader = req.headers.get("Authorization");
+export const authMiddleware = createMiddleware<Env>(async (c, next) => {
+  const authHeader = c.req.header("Authorization");
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    throw new AppError("Missing or invalid Authorization header", 401);
+    return c.json(
+      { success: false, message: "Unauthorized: Missing token" },
+      401
+    );
   }
 
   const token = authHeader.split(" ")[1];
 
   try {
-    // ✅ Tambah 'await' di sini
     const payload = await verifyToken(token);
     
-    if (!payload.userId || Number.isNaN(payload.userId)) {
-      throw new AppError("Invalid token payload", 401);
-    }
-
-    return payload.userId;
+    // Kita simpen userId ke dalam 'c' (context).
+    // Nanti controller tinggal ambil pake c.get('user')
+    c.set("user", { userId: payload.userId });
+    
+    await next(); // Lanjut ke controller berikutnya
   } catch (err) {
-    throw new AppError("Invalid or expired token", 401);
+    return c.json(
+      { success: false, message: "Unauthorized: Invalid token" },
+      401
+    );
   }
-}
+});

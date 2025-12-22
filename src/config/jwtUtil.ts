@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { config } from "./appConfig";
 
-// Encode secret sekali aja di awal
+//encode secret key
 const SECRET_KEY = new TextEncoder().encode(config.jwt.secret);
 
 export async function signToken(userId: number): Promise<string> {

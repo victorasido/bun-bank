@@ -6,8 +6,8 @@ export interface TransactionResponse {
   amount: number;
   balanceBefore: number;
   balanceAfter: number;
-  description?: string | null;      // ✅ Baru
-  referenceNumber: string;          // ✅ Baru
+  description?: string | null;      
+  referenceNumber: string;          
   createdAt: Date;
 }
 
@@ -23,7 +23,7 @@ export interface WithdrawRequest {
 
 export interface TransferRequest {
   fromAccountNumber: string;
-  toAccountNumber: string; // ✅ Ganti dari toAccountId (opsional) jadi wajib string
+  toAccountNumber: string; 
   amount: number;
-  description?: string;    // ✅ Baru
+  description?: string;    
 }

@@ -2,7 +2,7 @@ import type { RegisterRequest, LoginRequest, AuthResponse } from "../dto/AuthDTO
 import { createUser, findUserByUsername, findUserByEmail } from "../service/userService";
 import { hashPassword, verifyPassword } from "./passwordUtil";
 import { AppError } from "../errors/AppError";
-import { signToken } from "../config/jwtUtil"; // Pastikan import ini aman
+import { signToken } from "../config/jwtUtil"; 
 
 // REGISTER
 export async function registerLogic(payload: RegisterRequest): Promise<AuthResponse> {
