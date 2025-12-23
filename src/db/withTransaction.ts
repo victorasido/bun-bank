@@ -1,19 +1,19 @@
-import { pool } from "./postgres";
+// src/db/withTransaction.ts
+import { prisma } from "./prisma";
+import type { Prisma } from "@prisma/client";
 
+// Kita bikin tipe 'TxClient' biar logic layer tau bentuk 'tx' itu kayak apa
+export type TxClient = Prisma.TransactionClient;
+
+/**
+ * Fungsi ini ngebungkus logic bisnis dalam satu transaksi database.
+ * Kalau ada error di dalam 'fn', semua perubahan DB bakal dibatalkan (Rollback).
+ */
 export async function withTransaction<T>(
-  fn: (client: any) => Promise<T>
+  fn: (tx: TxClient) => Promise<T>
 ): Promise<T> {
-  const client = await pool.connect();
-
-  try {
-    await client.query("BEGIN");
-    const result = await fn(client);
-    await client.query("COMMIT");
-    return result;
-  } catch (err) {
-    await client.query("ROLLBACK");
-    throw err;
-  } finally {
-    client.release();
-  }
+  // Prisma $transaction otomatis handle BEGIN, COMMIT, dan ROLLBACK.
+  return await prisma.$transaction(async (tx) => {
+    return await fn(tx);
+  });
 }

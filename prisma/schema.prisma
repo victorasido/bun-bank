@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  fullName     String?  @map("full_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relasi: Satu user punya banyak akun
+  accounts     Account[]
+
+  @@map("users") // Nama tabel di DB tetap 'users'
+}
+
+model Account {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  accountNumber String   @unique @map("account_number")
+  accountName   String?  @map("account_name")
+  balance       BigInt   @default(0) // Prisma support BigInt!
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relasi ke User
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@map("accounts")
+}
+
+model Transaction {
+  id                   Int      @id @default(autoincrement())
+  accountNumber        String   @map("account_number")
+  type                 String
+  amount               BigInt
+  balanceBefore        BigInt   @map("balance_before")
+  balanceAfter         BigInt   @map("balance_after")
+  description          String?
+  referenceNumber      String   @unique @map("reference_number")
+  relatedAccountNumber String?  @map("to_account_number")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  // Kita biarin Transaction lepas (gak ada foreign key ketat ke Account)
+  // Biar logic lo tetep fleksibel kayak yang lama.
+  
+  @@map("transactions")
+}

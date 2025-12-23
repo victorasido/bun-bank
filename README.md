@@ -111,6 +111,12 @@ docker-compose up -d
 ```
 
 Make sure port `5432` is free.
+If u have port problem, u can reset port
+```bash
+sudo systemctl daemon-reload
+sudo systemctl stop postgresql
+sudo lsof -i :5432
+```
 
 ### 3. Run Migrations
 
@@ -214,7 +220,7 @@ L.
 
 ## 🏗️ Architecture Overview
 
-This backend application is built with **Bun**, **TypeScript**, and **PostgreSQL**, following a **clean, layered architecture** to ensure separation of concerns, maintainability, and scalability.
+This backend application is built with **Bun**, **TypeScript**, and **Hono Framework**, following a **clean, layered architecture** to ensure separation of concerns, maintainability, and scalability.
 
 ### Built With
 
@@ -240,14 +246,14 @@ This backend application is built with **Bun**, **TypeScript**, and **PostgreSQL
            v
 +----------------------+
 |      IO LAYER        |
-|   src/routes         |
+|   routes             |
 |   Controllers        |
 +----------------------+
            |
            v
 +----------------------+
 |     LOGIC LAYER      |
-|   src/logic          |
+|   logic          |
 |   Business Rules     |
 |   Atomic Tx          |
 +----------------------+
@@ -255,7 +261,7 @@ This backend application is built with **Bun**, **TypeScript**, and **PostgreSQL
            v
 +----------------------+
 |  DEPENDENCY LAYER    |
-|   src/repo           |
+|   service            |
 |   Repositories       |
 +----------------------+
            |

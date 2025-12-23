@@ -1,5 +1,7 @@
-import { pool } from "../db/postgres";
-import type { User } from "../entities/User";
+import { PrismaClient } from "@prisma/client";
+import type { User } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 /**
  * =========================
@@ -10,24 +12,17 @@ export async function createUser(
   username: string,
   email: string,
   passwordHash: string,
-  fullName?: string // ✅ Terima parameter fullName
+  fullName?: string
 ): Promise<User> {
-  const result = await pool.query(
-    `
-    INSERT INTO users (username, email, password_hash, full_name)
-    VALUES ($1, $2, $3, $4)
-    RETURNING 
-      id, 
-      username, 
-      email, 
-      password_hash AS "passwordHash", 
-      full_name AS "fullName", 
-      created_at AS "createdAt"
-    `,
-    [username, email, passwordHash, fullName || null]
-  );
-  
-  return result.rows[0];
+  // Pake Prisma: Lebih bersih, gak ada SQL string
+  return await prisma.user.create({
+    data: {
+      username,
+      email,
+      passwordHash, // Prisma otomatis map ke 'password_hash' di DB
+      fullName,     // Prisma otomatis map ke 'full_name' di DB
+    },
+  });
 }
 
 /**
@@ -37,23 +32,10 @@ export async function createUser(
  */
 export async function findUserByUsername(
   username: string
-): Promise<User | undefined> {
-  const result = await pool.query(
-    `
-    SELECT 
-      id, 
-      username, 
-      email, 
-      password_hash AS "passwordHash", 
-      full_name AS "fullName",
-      created_at AS "createdAt"
-    FROM users 
-    WHERE username = $1
-    `,
-    [username]
-  );
-
-  return result.rows[0];
+): Promise<User | null> {
+  return await prisma.user.findUnique({
+    where: { username },
+  });
 }
 
 /**
@@ -63,23 +45,10 @@ export async function findUserByUsername(
  */
 export async function findUserByEmail(
   email: string
-): Promise<User | undefined> {
-  const result = await pool.query(
-    `
-    SELECT 
-      id, 
-      username, 
-      email, 
-      password_hash AS "passwordHash", 
-      full_name AS "fullName",
-      created_at AS "createdAt"
-    FROM users 
-    WHERE email = $1
-    `,
-    [email]
-  );
-
-  return result.rows[0];
+): Promise<User | null> {
+  return await prisma.user.findUnique({
+    where: { email },
+  });
 }
 
 /**
@@ -89,21 +58,8 @@ export async function findUserByEmail(
  */
 export async function findUserById(
   id: number
-): Promise<User | undefined> {
-  const result = await pool.query(
-    `
-    SELECT 
-      id, 
-      username, 
-      email, 
-      password_hash AS "passwordHash", 
-      full_name AS "fullName",
-      created_at AS "createdAt"
-    FROM users 
-    WHERE id = $1
-    `,
-    [id]
-  );
-
-  return result.rows[0];
+): Promise<User | null> {
+  return await prisma.user.findUnique({
+    where: { id },
+  });
 }
