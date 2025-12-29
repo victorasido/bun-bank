@@ -6,4 +6,9 @@ export const pool = new Pool({
   user: process.env.DB_USER || "bun_user",
   password: process.env.DB_PASSWORD || "bun_password",
   database: process.env.DB_NAME || "bun_bank",
+  // Pengaturan pool koneksi
+  max: 20, 
+  min: 5,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });

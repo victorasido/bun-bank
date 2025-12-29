@@ -1,105 +1,65 @@
 # Bun Bank API 🏦⚡
 
-**Bun Bank** is a backend banking simulation built with **Bun Runtime**, **TypeScript**, and **PostgreSQL**. This project is designed to show how a modern backend can be **fast, explicit, and safe**, without relying on heavy abstractions or magic.
+**Bun Bank** is a high-performance banking backend simulation built with **Bun**, **Hono**, and **Prisma ORM**.
 
-Think of this as a **clean rewrite** of a classic Java/Spring-style banking system into a lighter, more transparent stack.
-
----
-
-## 🎯 What This Project Is About
-
-This project exists to prove that:
-
-* You can build a **serious banking backend** with Bun
-* **Atomic transactions** matter, especially for money
-* Raw SQL is not scary — it’s powerful and predictable
-* Backend architecture should be **clear, not clever**
+This project demonstrates how to build a type-safe, scalable financial system using modern TypeScript tooling, moving away from legacy patterns while maintaining strict **ACID compliance** for transactions.
 
 ---
 
-## ✨ Features
+## 🎯 Key Features
 
-### 🔐 Authentication
+### ⚡ Performance & Stack
+* **Runtime:** Bun (Super fast JavaScript runtime)
+* **Framework:** Hono (Lightweight, web-standard aligned framework)
+* **ORM:** Prisma (Type-safe database access with Migration tool)
+* **Database:** PostgreSQL 16 (Dockerized)
 
-* User registration & login
-* JWT-based authentication (using `jose`)
+### 🏦 Banking Logic
+* **Atomic Transactions:** Uses Prisma Interactive Transactions (`$transaction`) to ensure money transfers are safe (ACID). If one step fails, everything rolls back.
+* **Concurrency Control:** Handles race conditions using atomic increments/decrements.
+* **Data Integrity:** Uses `BigInt` for balance precision to avoid floating-point errors.
 
-### 🏦 Accounts
-
-* Create bank accounts
-* Check balances and account info
-
-### 💸 Transactions
-
-* Deposit
-* Withdraw
-* Transfer between accounts
-* Transaction history
-
-### ⚙️ System
-
-* Health check endpoint
-* Database migrations
-* Manual transaction control (`BEGIN / COMMIT / ROLLBACK`)
+### 🔐 Security
+* **JWT Authentication:** Secure stateless authentication using `jose`.
+* **Password Hashing:** User passwords are encrypted before storage.
+* **Middleware:** Protected routes via custom Hono middleware.
 
 ---
 
-## 🏗️ Architecture (Straightforward & Explicit)
+## 🏗️ Architecture
 
-This app uses a **Monolithic Layered Architecture** — simple, readable, and scalable enough for real-world use.
+This project follows a **Clean Layered Architecture** to separate concerns:
 
-1. **Routes (`src/routes`)**
-   Handle HTTP requests and responses
-
-2. **Middleware (`src/middleware`)**
-   Auth checks and request validation
-
-3. **Business Logic (`src/logic`)**
-   Core rules, validations, and transaction flow
-
-4. **Service (`src/service`)**
-   Raw SQL queries using `pg`
-
-5. **Database Layer (`src/db`)**
-   PostgreSQL connection, migrations, and atomic transaction wrapper
-
-### Why This Design?
-
-* No ORM → full control, predictable queries
-* Manual transactions → no accidental partial updates
-* Clear separation of concerns → easy to reason about
+1.  **Presentation Layer (`src/routes`)**
+    * Handles HTTP requests using Hono.
+    * Parses JSON and validates inputs via DTOs.
+2.  **Logic Layer (`src/logic`)**
+    * Contains purely business rules (e.g., "Cannot transfer to self", "Check balance").
+    * Orchestrates transactions using `withTransaction` wrapper.
+3.  **Data Access Layer (`src/service`)**
+    * Interacts directly with the database via **Prisma Client**.
+    * Reusable functions that can run inside or outside a transaction.
+4.  **Infrastructure (`src/db`)**
+    * Manages Database Connection Pooling (via `pg` + `Prisma Adapter`).
 
 ---
 
 ## 🛠️ Tech Stack
 
-* **Runtime**: Bun (v1.x)
+* **Runtime**: Bun v1.x
 * **Language**: TypeScript
-* **Database**: PostgreSQL 16
-* **Container**: Docker & Docker Compose
-* **Libraries**:
-
-  * `pg` – PostgreSQL client
-  * `jose` – JWT handling
-
----
-
-## ⚙️ Requirements
-
-Make sure you have:
-
-* Bun installed
-* Docker & Docker Compose
-* VS Code (REST Client extension recommended)
+* **Framework**: Hono
+* **Database**: PostgreSQL
+* **ORM**: Prisma (with `@prisma/adapter-pg` for connection pooling)
+* **Dev Tools**: Docker, Docker Compose
 
 ---
 
 ## 🚀 How to Run
 
 ### 1. Clone & Install
-
 ```bash
-git clone https://github.com/victorasido/bun-bank.git
+git clone [https://github.com/victorasido/bun-bank.git](https://github.com/victorasido/bun-bank.git)
 cd bun-bank
 bun install
 ```
@@ -121,7 +81,11 @@ sudo lsof -i :5432
 ### 3. Run Migrations
 
 ```bash
-bun prisma migrate dev
+# Generate Prisma Client
+npx prisma generate
+and
+# Push schema to Database
+npx prisma migrate dev
 ```
 
 Wait until you see a success message.
@@ -208,71 +172,78 @@ src/
 
 ## 🧠 Final Notes
 
-* No ORM by design
-* Built to showcase **backend fundamentals**, not frameworks
-* Ideal for learning:
-
-  * Transaction safety
-  * API design
-  * Bun performance
+* **Modern ORM Implementation**: Uses **Prisma** for type-safe database queries and migrations, replacing legacy raw SQL patterns while keeping full control over performance.
+* **Strict Transaction Safety**: Demonstrates how to handle critical financial operations (ACID) using **Prisma Interactive Transactions** (`$transaction`).
+* **High Performance**: Built on top of **Bun** runtime and **Hono** framework for maximum speed and low overhead.
+* **Scalable Codebase**: Designed with clear separation of concerns, making it ideal for learning enterprise-grade backend architecture.
 
 L.
 
 ## 🏗️ Architecture Overview
 
-This backend application is built with **Bun**, **TypeScript**, and **Hono Framework**, following a **clean, layered architecture** to ensure separation of concerns, maintainability, and scalability.
+This backend application is built with **Bun**, **TypeScript**, **Hono**, and **Prisma**, following a **Clean Layered Architecture**. This ensures that business logic is decoupled from the database and HTTP framework, making the system maintainable and testable.
 
-### Built With
+### 🛠️ Built With
 
 * ⚡ **Bun** — High-performance JavaScript runtime
-* 🟦 **TypeScript** — Type-safe backend development
+* 🔥 **Hono** — Ultrafast web framework standard
+* 💎 **Prisma** — Next-generation ORM for Type Safety & Migration
+* 🟦 **TypeScript** — Static typing for robust development
 * 🐘 **PostgreSQL** — Relational database (Dockerized)
 
 ---
 
-### High-Level Architecture Flow
-
-
-
+### 🔄 High-Level Architecture Flow
 
 ```text
-+----------------------+
-|   USER / CLIENT      |
-+----------------------+
-           |
-           v
-+----------------------+
-|     BUN SERVER       |
-|  (Single Process)    |
-+----------------------+
-           |
-           v
-+----------------------+
-|      IO LAYER        |
-|   routes             |
-|   Controllers        |
-+----------------------+
-           |
-           v
-+----------------------+
-|     LOGIC LAYER      |
-|   logic              |
-|   app rule           |
-|   Atomic Tx          |
-+----------------------+
-           |
-           v
-+----------------------+
-|  DEPENDENCY LAYER    |
-|   service            |
-|                       |
-+----------------------+
-           |
-           v
-+----------------------+
-|   POSTGRESQL (DB)    |
-|   Docker Container   |
-|                      |
+(1) Request Masuk
+                                          |
+                                          v
++----------------------------------------------------------------------------------+
+|   BUN RUNTIME (Server Application)                                               |
+|                                                                                  |
+|   +--------------------------+                                                   |
+|   |  SRC/ROUTES (IO Layer)   |                                                   |
+|   |  (Hono Controller)       | <--- "Tolong transfer dong!"                      |
+|   +------------+-------------+                                                   |
+|                |                                                                 |
+|                v (2) Panggil Logic                                               |
+|   +--------------------------+                                                   |
+|   |  SRC/LOGIC               |                                                   |
+|   |  (Business Rules)        | <--- "Saldo cukup? Rekening valid?"               |
+|   +------------+-------------+                                                   |
+|                |                                                                 |
+|                v (3) Panggil Service                                             |
+|   +--------------------------+                                                   |
+|   |  SRC/SERVICE             |      (4) Query via Prisma                         |
+|   |                          | --------------------------------+                 |
+|   +--------------------------+                                 |                 |
+|                                                                |                 |
+|            +---------------------------------------------------+                 |
+|            |                                                                     |
+|            v (5) Minta Koneksi                                                   |
+|   +--------------------------+           +-----------------------------------+   |
+|   |  SRC/DB/PRISMA.TS        |           |  SRC/DB/POSTGRES.TS               |   |
+|   |  (Prisma Adapter)        | <-------> |  (The Connection Pool)            |   |
+|   |  "Jembatan"              |    (6)    |  [ Motor 1 (Dipake)   ]           |   |
+|   +------------+-------------+  Pinjam   |  [ Motor 2 (Standby)  ]           |   |
+|                |                Koneksi  |  [ Motor 3 (Standby)  ]           |   |
+|                |                         |  [ Motor 4 (Standby)  ]           |   |
+|                |                         +-----------------------------------+   |
+|                |                                                                 |
++----------------|-----------------------------------------------------------------+
+                 |
+                 | (7) Eksekusi SQL via Koneksi Pinjaman
+                 |
++----------------v-----------------+
+|  DOCKER CONTAINER                |
+|                                  |
+|  +----------------------------+  |
+|  |  PostgreSQL Database       |  |
+|  |  (Simpan Data Beneran)     |  |
+|  +----------------------------+  |
+|                                  |
++----------------------------------+
 +----------------------+
 ```
 
@@ -282,36 +253,32 @@ This backend application is built with **Bun**, **TypeScript**, and **Hono Frame
 
 #### 1. IO Layer (`src/routes`)
 
-* Handles HTTP requests and responses
-* Acts as the entry point of the application
-* Delegates processing to the Logic Layer
-* Contains controllers only (no business rules)
+* Handles HTTP requests/responses via Hono.
+* Validates input DTOs.
+* No business logic allowed here.
 
 #### 2. Logic Layer (`src/logic`)
 
-* Contains core business rules
-* Orchestrates use cases (deposit, withdrawal, transfer, auth)
-* Manages **atomic transactions** to ensure data consistency
-* Independent from HTTP and database implementations
+* Handles HTTP requests/responses via Hono.
+* Validates input DTOs.
+* No business logic allowed here.
 
 #### 3. Dependency Layer (`src/service`)
 
-* Handles database access logic
-* Implements repositories (User, Account, Transaction)
-* Contains database entities and configuration
-* No business rules allowed
+* Direct interface with the Database via Prisma.
+* Reusable CRUD operations.
+* Agnostic of HTTP context.
 
 #### 4. Database
 
-* PostgreSQL running inside a Docker container
-* Communicates via TCP port `5432`
-* Stores users, accounts, and transaction data
+* PostgreSQL running in Docker.
+* Managed via Prisma Schema and Migrations.
 
 ---
 
 ### Design Principles
 
-* ➡️ **Unidirectional dependency**: IO → Logic → Repository → DB
+* ➡️ **Unidirectional dependency**: IO → Logic → Serices → DB
 * 🧠 Business logic is isolated and testable
 * 🔒 Data consistency ensured through atomic transactions
 * 🧼 Clean separation between delivery, domain, and data access
