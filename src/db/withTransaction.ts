@@ -13,7 +13,7 @@ export async function withTransaction<T>(
   fn: (tx: TxClient) => Promise<T>
 ): Promise<T> {
   // Prisma $transaction otomatis handle BEGIN, COMMIT, dan ROLLBACK.
-  return await prisma.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx: TxClient) => {
     return await fn(tx);
   });
 }

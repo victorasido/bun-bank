@@ -7,5 +7,4 @@ const adapter = new PrismaPg(pool);
 // 2. Inisialisasi Prisma Client pake adapter
 export const prisma = new PrismaClient({
   adapter,
-
-});
+}); 
