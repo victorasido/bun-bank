@@ -21,9 +21,9 @@ export async function saveTransaction(
     data: {
       accountNumber: data.accountNumber,
       type: data.type,
-      amount: data.amount, // BigInt
-      balanceBefore: data.balanceBefore, // BigInt
-      balanceAfter: data.balanceAfter, // BigInt
+      amount: data.amount, 
+      balanceBefore: data.balanceBefore, 
+      balanceAfter: data.balanceAfter, 
       description: data.description,
       referenceNumber: data.referenceNumber,
       relatedAccountNumber: data.relatedAccountNumber,

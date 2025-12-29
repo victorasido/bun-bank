@@ -9,6 +9,6 @@ export const config = {
   jwt: {
     // Ambil dari .env, kalau kosong pake default (untuk dev)
     secret: process.env.JWT_SECRET || "default_secret_kalau_lupa_set_env",
-    expiration: process.env.JWT_EXPIRATION || "2m",
+    expiration: process.env.JWT_EXPIRATION || "10m",
   },
 };

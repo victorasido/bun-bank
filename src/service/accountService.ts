@@ -1,4 +1,3 @@
-// src/service/accountService.ts
 import { prisma } from "../db/prisma";
 import type { Account, Prisma } from "@prisma/client";
 

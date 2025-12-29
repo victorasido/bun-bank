@@ -11,7 +11,7 @@ type AuthEnv = {
   };
 };
 
-//router hono denagn authenv yang udah di definisin diatas
+//router hono denagn authenv yang udah di definisikan diatas
 const app = new Hono<AuthEnv>();
 
 //pasang middlereware dari authMiddleware

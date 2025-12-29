@@ -121,7 +121,7 @@ sudo lsof -i :5432
 ### 3. Run Migrations
 
 ```bash
-bun src/db/migrate.ts
+bun prisma migrate dev
 ```
 
 Wait until you see a success message.
@@ -232,6 +232,9 @@ This backend application is built with **Bun**, **TypeScript**, and **Hono Frame
 
 ### High-Level Architecture Flow
 
+
+
+
 ```text
 +----------------------+
 |   USER / CLIENT      |
@@ -253,8 +256,8 @@ This backend application is built with **Bun**, **TypeScript**, and **Hono Frame
            v
 +----------------------+
 |     LOGIC LAYER      |
-|   logic          |
-|   Business Rules     |
+|   logic              |
+|   app rule           |
 |   Atomic Tx          |
 +----------------------+
            |
@@ -262,7 +265,7 @@ This backend application is built with **Bun**, **TypeScript**, and **Hono Frame
 +----------------------+
 |  DEPENDENCY LAYER    |
 |   service            |
-|   Repositories       |
+|                       |
 +----------------------+
            |
            v
@@ -291,7 +294,7 @@ This backend application is built with **Bun**, **TypeScript**, and **Hono Frame
 * Manages **atomic transactions** to ensure data consistency
 * Independent from HTTP and database implementations
 
-#### 3. Dependency Layer (`src/repo`)
+#### 3. Dependency Layer (`src/service`)
 
 * Handles database access logic
 * Implements repositories (User, Account, Transaction)
@@ -316,3 +319,182 @@ This backend application is built with **Bun**, **TypeScript**, and **Hono Frame
 This architecture is inspired by **Clean Architecture** and adapted for a **Bun + TypeScript** backend environment.
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```text
+┌──────────────┐
+│ Presentation │  (UI)
+└──────┬───────┘
+       │ HTTP
+┌──────▼───────┐
+│ Application  │  (Backend API)
+└──────┬───────┘
+       │ SQL
+┌──────▼───────┐
+│   Database   │
+└──────────────┘
+```

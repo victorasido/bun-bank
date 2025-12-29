@@ -1,4 +1,3 @@
-// src/middleware/authMiddleware.ts
 import { createMiddleware } from "hono/factory";
 import { verifyToken } from "../config/jwtUtil";
 

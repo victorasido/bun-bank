@@ -1,5 +1,5 @@
 import { withTransaction } from "../db/withTransaction";
-import type { Transaction } from "../entities/Transaction";
+import type { Transaction } from "@prisma/client"; // 
 import { TransactionType } from "../constants/TransactionType";
 import type { DepositRequest, WithdrawRequest, TransferRequest, TransactionResponse } from "../dto/TransactionDTO";
 import { AppError } from "../errors/AppError";
@@ -13,13 +13,14 @@ function assertAccountOwner(account: any, userId: number): any {
   return account;
 }
 
+// ✅ HELPER BARU: Handle BigInt ke Number buat JSON
 function toResponse(tx: Transaction): TransactionResponse {
   return {
     id: tx.id,
     type: tx.type,
-    amount: Number(tx.amount),
-    balanceBefore: Number(tx.balanceBefore),
-    balanceAfter: Number(tx.balanceAfter),
+    amount: Number(tx.amount),               // BigInt -> Number
+    balanceBefore: Number(tx.balanceBefore), // BigInt -> Number
+    balanceAfter: Number(tx.balanceAfter),   // BigInt -> Number
     description: tx.description,
     referenceNumber: tx.referenceNumber,
     createdAt: tx.createdAt,
@@ -32,22 +33,29 @@ function generateRef(): string {
 
 // --- Deposit ---
 export async function depositLogic(userId: number, payload: DepositRequest): Promise<TransactionResponse> {
-  const { accountId, amount } = payload;
+  const { accountNumber, amount } = payload;
   if (!userId) throw new AppError("Unauthorized", 401);
-  if (!accountId || amount <= 0) throw new AppError("Invalid amount", 400);
+  if (!accountNumber || amount <= 0) throw new AppError("Invalid amount", 400);
 
   return await withTransaction(async (tx) => {
-    const account = assertAccountOwner(await findAccountById(accountId, tx), userId);
-    const updatedAccount = await updateAccountBalance(accountId, amount, tx);
+    // Note: tx di sini udah support Prisma karena withTransaction kita udah update
+    const account = assertAccountOwner(await findAccountByNumber(accountNumber, tx), userId);
+    
+    // Convert BigInt buat logic matematika saldo
+    const currentBalance = BigInt(account.balance);
+    const amountBg = BigInt(amount);
+
+    const updatedAccount = await updateAccountBalance(account.id, amount, tx);
 
     const transaction = await saveTransaction({
       accountNumber: updatedAccount.accountNumber,
       type: TransactionType.DEPOSIT,
-      amount,
-      balanceBefore: Number(account.balance),
-      balanceAfter: Number(updatedAccount.balance),
+      amount: amountBg,             
+      balanceBefore: currentBalance, 
+      balanceAfter: updatedAccount.balance, 
       description: "Deposit money",
       referenceNumber: generateRef(),
+      relatedAccountNumber: null,
     }, tx);
 
     return toResponse(transaction);
@@ -56,24 +64,29 @@ export async function depositLogic(userId: number, payload: DepositRequest): Pro
 
 // --- Withdraw ---
 export async function withdrawLogic(userId: number, payload: WithdrawRequest): Promise<TransactionResponse> {
-  const { accountId, amount } = payload;
+  const { accountNumber, amount } = payload;
   if (!userId) throw new AppError("Unauthorized", 401);
-  if (!accountId || amount <= 0) throw new AppError("Invalid amount", 400);
+  if (!accountNumber || amount <= 0) throw new AppError("Invalid amount", 400);
 
   return await withTransaction(async (tx) => {
-    const account = assertAccountOwner(await findAccountById(accountId, tx), userId);
-    if (Number(account.balance) < amount) throw new AppError("Insufficient balance", 400);
+    const account = assertAccountOwner(await findAccountByNumber(accountNumber, tx), userId);
+    
+    const currentBalance = BigInt(account.balance);
+    const amountBg = BigInt(amount);
 
-    const updatedAccount = await updateAccountBalance(accountId, -amount, tx);
+    if (currentBalance < amountBg) throw new AppError("Insufficient balance", 400);
+
+    const updatedAccount = await updateAccountBalance(account.id, -amount, tx);
 
     const transaction = await saveTransaction({
       accountNumber: updatedAccount.accountNumber,
       type: TransactionType.WITHDRAW,
-      amount,
-      balanceBefore: Number(account.balance),
-      balanceAfter: Number(updatedAccount.balance),
+      amount: amountBg,
+      balanceBefore: currentBalance,
+      balanceAfter: updatedAccount.balance,
       description: "Withdraw money",
       referenceNumber: generateRef(),
+      relatedAccountNumber: null,
     }, tx);
 
     return toResponse(transaction);
@@ -89,42 +102,41 @@ export async function transferLogic(userId: number, payload: TransferRequest): P
   if (fromAccountNumber === toAccountNumber) throw new AppError("Cannot transfer to self", 400);
 
   return await withTransaction(async (tx) => {
-    // 1. Cari Akun Pengirim by NUMBER (Bukan ID)
     const sender = await findAccountByNumber(fromAccountNumber, tx);
-    
-    // 2. VALIDASI KEPEMILIKAN (Wajib Punya User yg Login)
     assertAccountOwner(sender, userId);
 
-    // 3. Cek Saldo
-    if (Number(sender!.balance) < amount) throw new AppError("Insufficient balance", 400);
+    const senderBalance = BigInt(sender!.balance);
+    const amountBg = BigInt(amount);
 
-    // 4. Cari Akun Penerima
+    if (senderBalance < amountBg) throw new AppError("Insufficient balance", 400);
+
     const receiver = await findAccountByNumber(toAccountNumber, tx);
     if (!receiver) throw new AppError("Destination account not found", 404);
 
+    const receiverBalance = BigInt(receiver.balance);
     const baseRef = generateRef();
 
-    // 5. Eksekusi Transfer (Sender Keluar)
+    // 1. Potong Saldo Pengirim
     const updatedSender = await updateAccountBalance(sender!.id, -amount, tx);
     const txOut = await saveTransaction({
       accountNumber: sender!.accountNumber,
       type: TransactionType.TRANSFER_OUT,
-      amount,
-      balanceBefore: Number(sender!.balance),
-      balanceAfter: Number(updatedSender.balance),
+      amount: amountBg,
+      balanceBefore: senderBalance,
+      balanceAfter: updatedSender.balance,
       description: description || "Transfer Out",
       referenceNumber: baseRef + "-OUT",
       relatedAccountNumber: receiver.accountNumber
     }, tx);
 
-    // 6. Eksekusi Transfer (Receiver Masuk)
+    // 2. Tambah Saldo Penerima
     const updatedReceiver = await updateAccountBalance(receiver.id, amount, tx);
     const txIn = await saveTransaction({
       accountNumber: receiver.accountNumber,
       type: TransactionType.TRANSFER_IN,
-      amount,
-      balanceBefore: Number(receiver.balance),
-      balanceAfter: Number(updatedReceiver.balance),
+      amount: amountBg,
+      balanceBefore: receiverBalance,
+      balanceAfter: updatedReceiver.balance,
       description: description || "Transfer In",
       referenceNumber: baseRef + "-IN",
       relatedAccountNumber: sender!.accountNumber

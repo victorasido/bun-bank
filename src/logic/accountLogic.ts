@@ -5,7 +5,8 @@ import {
   findAccountByNumber
 } from "../service/accountService";
 import type { CreateAccountRequest, AccountResponse } from "../dto/AccountDTO";
-import type { Account } from "../entities/Account";
+// ✅ GANTI IMPORT: Pake tipe dari Prisma
+import type { Account } from "@prisma/client";
 
 /**
  * =========================
@@ -22,8 +23,10 @@ function toAccountResponse(account: Account): AccountResponse {
     id: account.id,
     userId: account.userId,
     accountNumber: account.accountNumber,
-    accountName: account.accountName,
-    balance: Number(account.balance), // Pastikan jadi number
+    // Prisma balikin null, DTO minta undefined. Kita convert pake '??'
+    accountName: account.accountName ?? undefined, 
+    // ✅ PENTING: Convert BigInt ke Number biar bisa jadi JSON
+    balance: Number(account.balance), 
     createdAt: account.createdAt,
   };
 }
@@ -46,7 +49,7 @@ export async function createAccountLogic(
   let accountNumber = generateAccountNumber();
   let exists = await findAccountByNumber(accountNumber);
 
-  // Retry kalau kebetulan nomornya kembar (tabrakan)
+  // Retry kalau kebetulan nomornya kembar
   while (exists) {
     accountNumber = generateAccountNumber();
     exists = await findAccountByNumber(accountNumber);

@@ -12,12 +12,12 @@ export interface TransactionResponse {
 }
 
 export interface DepositRequest {
-  accountId: number;
+  accountNumber: string;
   amount: number;
 }
 
 export interface WithdrawRequest {
-  accountId: number;
+  accountNumber: string;
   amount: number;
 }
 

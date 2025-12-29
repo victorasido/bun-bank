@@ -4,7 +4,7 @@
 ### ============================================================================
 
 @baseUrl = http://localhost:3000
-@token = {{Login.response.body.data.token}}
+@token = eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjEsImlhdCI6MTc2NjU0NzMyMywiZXhwIjoxNzY2NTQ3OTIzfQ.P4pH3uNP2ut_Ibh6GYCarSvE3XHp30FXnHepRUrkKOU
 
 ### ========================================
 ### 1. REGISTER USER
@@ -57,7 +57,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "accountId": 1, 
+  "accountNumber": 3774814236, 
   "amount": 1000000
 }
 
@@ -69,7 +69,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "accountId": 1, 
+  "accountNumber": 1, 
   "amount": 50000
 }
 
@@ -82,8 +82,8 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "fromAccountNumber": "MASUKKAN_REKENING_PENGIRIM",
-  "toAccountNumber": "MASUKKAN_REKENING_TUJUAN",
+  "fromAccountNumber": "2649547688",
+  "toAccountNumber": "5764042218",
   "amount": 75000,
   "description": "Bayar cicilan otomatis"
 }
@@ -103,8 +103,8 @@ POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-  "username": "victor_pro",
-  "password": "wrongpassword"
+  "username": "user1",
+  "password": "password123"
 }
 
 ### Transfer to Self (Should Fail)
