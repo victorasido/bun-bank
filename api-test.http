@@ -4,8 +4,7 @@
 ### ============================================================================
 
 @baseUrl = http://localhost:3000
-@token = eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjEsImlhdCI6MTc2NjU0NzMyMywiZXhwIjoxNzY2NTQ3OTIzfQ.P4pH3uNP2ut_Ibh6GYCarSvE3XHp30FXnHepRUrkKOU
-
+@token = eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjEsImlhdCI6MTc2NzU4NDE4NCwiZXhwIjoxNzY3NTg0Nzg0fQ.2BA8ZJiipF2cHgVuITV38TFzRBI3nWsPEGwBD4x4T2M
 ### ========================================
 ### 1. REGISTER USER
 ### ========================================
@@ -49,6 +48,7 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/accounts
 Authorization: Bearer {{token}}
 
+// use string data type for accountNumber in all tests below
 ### ========================================
 ### 5. DEPOSIT
 ### ========================================
@@ -57,7 +57,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "accountNumber": 3774814236, 
+  "accountNumber": "2611733269",
   "amount": 1000000
 }
 

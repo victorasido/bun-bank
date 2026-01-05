@@ -1,6 +1,9 @@
 //import module
+import "./instrumentation";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
+
+import { trace } from "@opentelemetry/api";
 
 //import routes
 import authRoutes from "./routes/authRoutes";
@@ -12,6 +15,27 @@ const app = new Hono();
 //logger middleware
 app.use("*", logger());
 
+// OpenTelemetry manual tracing middleware
+app.use("*", async (c, next) => {
+  const tracer = trace.getTracer("bun-bank-service");
+  
+  // Start Stopwatch manual
+  return tracer.startActiveSpan(`${c.req.method} ${c.req.path}`, async (span) => {
+    try {
+      span.setAttribute("http.method", c.req.method);
+      span.setAttribute("http.url", c.req.url);
+      
+      await next(); // Lanjut ke logic aplikasi lu
+      
+      span.setAttribute("http.status_code", c.res.status);
+    } catch (error) {
+      span.recordException(error as Error); // Catet error kalau ada
+      throw error;
+    } finally {
+      span.end(); // Stop Stopwatch
+    }
+  });
+});
 //app error handler
 app.onError((err, c) => {
   console.error(`❌ Error: ${err.message}`);
