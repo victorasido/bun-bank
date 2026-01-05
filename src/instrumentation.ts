@@ -3,27 +3,33 @@ import { NodeSDK } from "@opentelemetry/sdk-node"; //otak/tulang utama OpenTelem
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node"; //otomatisasi instrumentasi buat Node.js
 import { resourceFromAttributes } from "@opentelemetry/resources"; //buat nentuin resource/service kita/ktp(atribute=value)
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions"; //standar nama service
+import { PrismaInstrumentation } from "@prisma/instrumentation";
 
-// Import ConsoleSpanExporter untuk output ke terminal
-import { ConsoleSpanExporter } from "@opentelemetry/sdk-trace-node";
+// Import Protocol
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto"; 
 
-// report to terminal
-const traceExporter = new ConsoleSpanExporter(); 
+// Setup Exporter ke Jaeger (Port 4318 adalah default HTTP OTLP)
+const traceExporter = new OTLPTraceExporter({
+  url: "http://localhost:4318/v1/traces",
+});
 
 // Inisialisasi NodeSDK OpenTelemetry
 const sdk = new NodeSDK({
   resource: resourceFromAttributes({
     [ATTR_SERVICE_NAME]: "bun-bank-service",
   }),
-  traceExporter, // Pasang kabel ke terminal
-  instrumentations: [getNodeAutoInstrumentations()],
+  traceExporter, // Pasang kabel ke jager
+  instrumentations: [
+    getNodeAutoInstrumentations(),
+    new PrismaInstrumentation(), // Pasang Prisma Instrumentation
+  ],
 });
 
 sdk.start();
-console.log(" OpenTelemetry (Output ke Terminal) aktif!");
+console.log(" OpenTelemetry (port 16686) aktif!");
 
 //sistem pemantau otomatis (CCTV) yang menyusup ke dalam aplikasi bank
 //merekam jalur eksekusi dan durasi setiap aktivitas, seperti request HTTP atau query database, 
 //tanpa perlu mengubah kode aslinya. menggunakan NodeSDK untuk mengaktifkan sensor "Auto-Instrumentation"
 //melacak apa yang terjadi di balik layar, memberi label data tersebut dengan nama "bun-bank-service", 
-//dan akhirnya mencetak seluruh laporan detailnya langsung ke layar terminal/comsole
+//dan akhirnya mencetak seluruh laporan detailnya langsung ke port 16686,

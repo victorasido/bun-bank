@@ -19,13 +19,13 @@ services:
     image: jaegertracing/all-in-one:latest
     container_name: bun-jaeger
     restart: always
-    # Environment ini penting biar dia mau nerima data dari luar
-    environment:
-      - COLLECTOR_OTLP_ENABLED=true
+
     ports:
       - "16686:16686" # Port Website (UI) - Kita buka ini di browser
       - "4318:4318"   # Port Penerima Data (HTTP) - Bun kirim ke sini
-      - "4317:4317"   # Port Penerima Data (gRPC)
 
+    # Environment ini penting biar dia mau nerima data 
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
 volumes:
   pgdata:

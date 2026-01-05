@@ -4,7 +4,7 @@
 ### ============================================================================
 
 @baseUrl = http://localhost:3000
-@token = eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjEsImlhdCI6MTc2NzU4NDE4NCwiZXhwIjoxNzY3NTg0Nzg0fQ.2BA8ZJiipF2cHgVuITV38TFzRBI3nWsPEGwBD4x4T2M
+@token = eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjEsImlhdCI6MTc2NzU5NzUzNywiZXhwIjoxNzY3NTk4MTM3fQ.N_fhi6b2c8kBU64WHBRLyrPXSJHeL--EPRMfX1fpITQ
 ### ========================================
 ### 1. REGISTER USER
 ### ========================================
@@ -69,7 +69,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "accountNumber": 1, 
+  "accountNumber": "2611733269", 
   "amount": 50000
 }
 
@@ -82,8 +82,8 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "fromAccountNumber": "2649547688",
-  "toAccountNumber": "5764042218",
+  "fromAccountNumber": "2611733269",
+  "toAccountNumber": "3575533527",
   "amount": 75000,
   "description": "Bayar cicilan otomatis"
 }
