@@ -4,7 +4,7 @@
 ### ============================================================================
 
 @baseUrl = http://localhost:3000
-@token = eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjEsImlhdCI6MTc2NzU5NzUzNywiZXhwIjoxNzY3NTk4MTM3fQ.N_fhi6b2c8kBU64WHBRLyrPXSJHeL--EPRMfX1fpITQ
+@token = eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjEsImlhdCI6MTc2NzYwMDg4NCwiZXhwIjoxNzY3NjAxNDg0fQ.BkZnLYVQZwip455FUCu5tT2oKDh021qTVEiB1lQx0uQ
 ### ========================================
 ### 1. REGISTER USER
 ### ========================================
@@ -91,7 +91,7 @@ Authorization: Bearer {{token}}
 ### ========================================
 ### 8. CEK HISTORY
 ### ========================================
-GET {{baseUrl}}/transactions/1
+GET {{baseUrl}}/transactions/1 
 Authorization: Bearer {{token}}
 
 ### ========================================
