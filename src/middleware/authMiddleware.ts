@@ -1,5 +1,6 @@
 import { createMiddleware } from "hono/factory";
 import { verifyToken } from "../config/jwtUtil";
+import { trace } from "@opentelemetry/api";
 
 // Ini tipe data buat Context Hono biar dia tau ada variabel 'user'
 type Env = {
@@ -8,6 +9,7 @@ type Env = {
   };
 };
 
+// Middleware autentikasi JWT
 export const authMiddleware = createMiddleware<Env>(async (c, next) => {
   const authHeader = c.req.header("Authorization");
 
@@ -23,9 +25,17 @@ export const authMiddleware = createMiddleware<Env>(async (c, next) => {
   try {
     const payload = await verifyToken(token);
     
-    // Kita simpen userId ke dalam 'c' (context).
-    // Nanti controller tinggal ambil pake c.get('user')
+    // simpan userId ke dalam 'c' (context).
+    // controller call c.get('user')
     c.set("user", { userId: payload.userId });
+
+    // Add span OpenTelemetry
+    const cuurrentSpan = trace.getActiveSpan();
+
+    // Add attribute userId to the current span
+    if (cuurrentSpan) {
+      cuurrentSpan.setAttribute("app.user.id", payload.userId);
+    }
     
     await next(); // Lanjut ke controller berikutnya
   } catch (err) {

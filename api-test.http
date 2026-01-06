@@ -1,11 +1,9 @@
 ### ============================================================================
 ### Bank Application API Tests (Bun Version)
-### Style: Mentor (Variables & Automation)
 ### ============================================================================
 
 @baseUrl = http://localhost:3000
-@token = eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjEsImlhdCI6MTc2NzYwMDg4NCwiZXhwIjoxNzY3NjAxNDg0fQ.BkZnLYVQZwip455FUCu5tT2oKDh021qTVEiB1lQx0uQ
-### ========================================
+@token = eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjEsImlhdCI6MTc2NzY4MjA0OSwiZXhwIjoxNzY3NjgyNjQ5fQ.bPA1r0pdOwhbTVYiX7qWuM6lTRC4XHucOog7YYB7B8g
 ### 1. REGISTER USER
 ### ========================================
 POST {{baseUrl}}/auth/register
