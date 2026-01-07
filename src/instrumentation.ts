@@ -1,9 +1,7 @@
 //import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { NodeSDK } from "@opentelemetry/sdk-node"; //otak/tulang utama OpenTelemetry di Node.js
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node"; //otomatisasi instrumentasi buat Node.js
-import { Resource } from "@opentelemetry/resources"; //buat nentuin resource/service kita/ktp(atribute=value)
-
-import { PrismaInstrumentation } from "@prisma/instrumentation";
+import { Resource } from "@opentelemetry/resources"; //buat nentuin resource/service kita/ktp(atribute=value
 
 // Import Protocol
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto"; 
@@ -16,12 +14,13 @@ const traceExporter = new OTLPTraceExporter({
 // Inisialisasi NodeSDK OpenTelemetry
 const sdk = new NodeSDK({
   resource: new Resource({
-    "service.name": "bun-bank-service",
-  }),
+    "service.name": "bun-bank-service",   }),
   traceExporter, // Pasang kabel ke jager
   instrumentations: [
-    getNodeAutoInstrumentations(),
-    new PrismaInstrumentation(), // Pasang Prisma Instrumentation
+    getNodeAutoInstrumentations({
+    '@opentelemetry/instrumentation-fs': { enabled: false }, // Nonaktifkan instrumentasi fs
+    '@opentelemetry/instrumentation-net': { enabled: false },
+    })
   ],
 });
 

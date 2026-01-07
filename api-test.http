@@ -3,7 +3,7 @@
 ### ============================================================================
 
 @baseUrl = http://localhost:3000
-@token = eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjEsImlhdCI6MTc2NzY4MjA0OSwiZXhwIjoxNzY3NjgyNjQ5fQ.bPA1r0pdOwhbTVYiX7qWuM6lTRC4XHucOog7YYB7B8g
+@token = eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjEsImlhdCI6MTc2Nzc1OTUwOCwiZXhwIjoxNzY3NzYwMTA4fQ.hXEIBjwEbu30T2_7_gOplhHkXT0q8X2WEk3VvoSg0oI
 ### 1. REGISTER USER
 ### ========================================
 POST {{baseUrl}}/auth/register

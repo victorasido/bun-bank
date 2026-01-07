@@ -7,6 +7,7 @@ import {
 import type { CreateAccountRequest, AccountResponse } from "../dto/AccountDTO";
 // ✅ GANTI IMPORT: Pake tipe dari Prisma
 import type { Account } from "@prisma/client";
+import telemetry from "@opentelemetry/api";
 
 /**
  * =========================
@@ -71,6 +72,15 @@ export async function getMyAccountsLogic(
 ): Promise<AccountResponse[]> {
   if (!userId) throw new AppError("Unauthorized", 401);
 
+  const tracer = telemetry.trace.getTracer("account-logic-tracer");
+
+  const span = tracer.startSpan("getMyAccountsLogic-span");
+
   const accounts = await findAccountsByUserId(userId);
+
+  span.end();
+
+  
+
   return accounts.map(toAccountResponse);
 }
