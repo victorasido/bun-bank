@@ -36,6 +36,7 @@ export async function createAccount(
  * FIND ACCOUNTS BY USER ID
  * =========================
  */
+
 export async function findAccountsByUserId(
   userId: number
 ): Promise<Account[]> {

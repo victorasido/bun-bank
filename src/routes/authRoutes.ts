@@ -1,15 +1,17 @@
 //import necessary modules and types
 import { Hono } from "hono";
-import { registerLogic, loginLogic } from "../logic/authLogic";
+import { AuthLogic} from "../logic/authLogic";
 import type { RegisterRequest, LoginRequest } from "../dto/AuthDTO";
 
 //router hono
 const app = new Hono();
 
+const authLogic = new AuthLogic();
+
 //post/auth/register
 app.post("/register", async (c) => {
   const body = await c.req.json<RegisterRequest>();
-  const result = await registerLogic(body);
+  const result = await authLogic.register(body);
 
   return c.json({
     success: true,
@@ -21,7 +23,7 @@ app.post("/register", async (c) => {
 //post/auth/login
 app.post("/login", async (c) => {
   const body = await c.req.json<LoginRequest>();
-  const result = await loginLogic(body);
+  const result = await authLogic.login(body);
 
   return c.json({
     success: true,
