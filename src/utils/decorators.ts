@@ -1,15 +1,11 @@
 import { trace, Span, SpanStatusCode } from "@opentelemetry/api";
+import { logger } from "./logger"; // 👈 Import Sekretaris Winston
 
-// 1. Inisialisasi Tracer Global
-// Nama tracer disamakan dengan yang ada di instrumentation.ts
 const tracer = trace.getTracer("bun-bank-service");
 
 /**
- * @Trace Decorator
- * "Stiker Ajaib" untuk membungkus method dengan OpenTelemetry Span secara otomatis.
- * * Cara Pakai:
- * @Trace("nama-span-custom")
- * async myMethod() { ... }
+ * @Trace Decorator (Hybrid Version: Trace + Log)
+ * Otomatis pasang CCTV (Jaeger) dan Catat Buku Tamu (Loki/Winston).
  */
 export function Trace(customSpanName?: string) {
   return function (
@@ -17,38 +13,52 @@ export function Trace(customSpanName?: string) {
     propertyKey: string,
     descriptor: PropertyDescriptor
   ) {
-    // Simpan fungsi asli yang belum ditempel stiker
     const originalMethod = descriptor.value;
 
-    // Ganti fungsi asli dengan fungsi "bajakan" (Wrapper)
     descriptor.value = async function (...args: any[]) {
-      
-      // Tentukan nama span: Pakai nama custom ATAU nama Class.Method otomatis
+      // 1. Tentukan Nama Operation
       const className = target.constructor.name;
       const spanName = customSpanName || `${className}.${propertyKey}`;
 
-      // Mulai Stopwatch (Start Span)
+      // 2. [LOG] Catat: "Bos mulai kerja"
+      logger.info(`🚀 STARTED: ${spanName}`, {
+        class: className,
+        method: propertyKey,
+        args: args, // Opsional: kalau mau catat parameter input (hati-hati data sensitif!)
+      });
+
+      // 3. Mulai CCTV (Jaeger)
       return tracer.startActiveSpan(spanName, async (span: Span) => {
         try {
-          // Jalankan fungsi asli (Kado dibuka)
+          // --- JALANKAN LOGIC ASLI ---
           const result = await originalMethod.apply(this, args);
-          
-          // Kalau sukses, return hasilnya
+
+          // 4. [LOG] Catat: "Bos sukses"
+          logger.info(`✅ SUCCESS: ${spanName}`, {
+            status: "success",
+            duration: "auto-calculated-by-loki", // Nanti Loki yang hitung durasi dari timestamp
+          });
+
           return result;
 
-        } catch (error) {
-          // Kalau Error: Lapor ke Jaeger (Record Exception)
-          span.recordException(error as Error);
+        } catch (error: any) {
+          // 5. [LOG] Catat: "Ada Error!"
+          logger.error(`❌ ERROR: ${spanName} - ${error.message}`, {
+            status: "error",
+            errorStack: error.stack,
+          });
+
+          // 6. Lapor ke CCTV (Jaeger)
+          span.recordException(error);
           span.setStatus({
             code: SpanStatusCode.ERROR,
-            message: (error as Error).message,
+            message: error.message,
           });
-          
-          // Lempar errornya lagi ke atas biar Controller tau ada error
+
           throw error;
 
         } finally {
-          // Wajib matikan stopwatch (End Span)
+          // 7. Matikan CCTV
           span.end();
         }
       });
