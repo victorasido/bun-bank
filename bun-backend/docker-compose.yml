@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+  # 1. DATABASE UTAMA
+  postgres:
+    image: postgres:16
+    container_name: bun-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: bun_user
+      POSTGRES_PASSWORD: bun_password
+      POSTGRES_DB: bun_bank
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # 2. TRACING (Jaeger - CCTV)
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: bun-jaeger
+    restart: always
+    ports:
+      - "16686:16686" # UI Jaeger (localhost:16686)
+      - "4318:4318"   # Input Data Trace
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+  # 3. LOGGING (Loki - Gudang Log) ✅ BARU
+  loki:
+    image: grafana/loki:latest
+    container_name: bun-loki
+    restart: always
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+
+  # 4. MONITORING (Grafana - Layar Dashboard)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: bun-grafana
+    restart: always
+    ports:
+      - "3000:3000" # UI Grafana (localhost:3000)
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - loki
+      - jaeger
+
+volumes:
+  pgdata:

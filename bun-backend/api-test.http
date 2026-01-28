@@ -1,0 +1,117 @@
+### ============================================================================
+### Bank Application API Tests (Bun Version)
+### ============================================================================
+
+@baseUrl = http://localhost:3001
+@token = eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjEsImlhdCI6MTc2ODg5NTM2NCwiZXhwIjoxNzY4ODk1OTY0fQ.qmHQFGcxchXnANn40WZrDAzvwkAOEIXvkaw-iDwCT2U
+### ========================================
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "user1",
+  "email": "user1@example.com",
+  "password": "password123",
+  "fullName": "user1"
+}
+
+### ========================================
+### 2. LOGIN (AUTOMATED TOKEN)
+### ========================================
+# @name Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "user1",
+  "password": "password123"
+}
+
+### ========================================
+### 3. BUAT AKUN BANK
+### ========================================
+POST {{baseUrl}}/accounts
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "accountName": "Tabungan Masa Depan"
+}
+
+### ========================================
+### 4. LIHAT DAFTAR AKUN
+### ========================================
+# Cek 'accountNumber' di response ini buat transfer nanti
+GET {{baseUrl}}/accounts
+Authorization: Bearer {{token}}
+
+// use string data type for accountNumber in all tests below
+### ========================================
+### 5. DEPOSIT
+### ========================================
+POST {{baseUrl}}/transactions/deposit
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "accountNumber": "2611733269",
+  "amount": 1000000
+}
+
+### ========================================
+### 6. WITHDRAW
+### ========================================
+POST {{baseUrl}}/transactions/withdraw
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "accountNumber": "2611733269", 
+  "amount": 50000
+}
+
+### ========================================
+### 7. TRANSFER (Updated Logic)
+### ========================================
+# Pastikan ganti nomor rekening tujuan dengan yang valid (buat user lain dulu kalau perlu)
+POST {{baseUrl}}/transactions/transfer
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "fromAccountNumber": "2611733269",
+  "toAccountNumber": "3575533527",
+  "amount": 75000,
+  "description": "Bayar cicilan otomatis"
+}
+
+### ========================================
+### 8. CEK HISTORY
+### ========================================
+GET {{baseUrl}}/transactions/2611733269
+Authorization: Bearer {{token}}
+
+### ========================================
+### 9. ERROR HANDLING TESTS
+### ========================================
+
+### Login Failed (Wrong Password)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "user1",
+  "password": "password123"
+}
+
+### Transfer to Self (Should Fail)
+POST {{baseUrl}}/transactions/transfer
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "fromAccountNumber": "1234567890",
+  "toAccountNumber": "1234567890",
+  "amount": 100,
+  "description": "Transfer ke diri sendiri"
+}
