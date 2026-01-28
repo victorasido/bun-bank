@@ -24,7 +24,7 @@ export default function Login() {
       
       alert('Login Berhasil!');
       // Nanti kita arahkan ke dashboard (sekarang belum ada, jadi biarin dulu)
-      // navigate('/dashboard'); 
+      navigate('/dashboard'); 
     } catch (err: any) {
       console.error(err);
       setError(err.response?.data?.message || 'Gagal Login');
