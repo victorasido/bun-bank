@@ -1,13 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
-// prisma/schema.prisma
-
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters", "tracing"]
 }
 
@@ -21,25 +13,23 @@ model User {
   username     String   @unique
   email        String   @unique
   passwordHash String   @map("password_hash")
-  fullName     String?  @map("full_name")
+  fullName     String?  @map("full_name") // ✅ UDAH DISAMBUNG
   createdAt    DateTime @default(now()) @map("created_at")
 
-  // Relasi: Satu user punya banyak akun
-  accounts     Account[]
+  accounts Account[]
 
-  @@map("users") // Nama tabel di DB tetap 'users'
+  @@map("users")
 }
 
 model Account {
   id            Int      @id @default(autoincrement())
   userId        Int      @map("user_id")
   accountNumber String   @unique @map("account_number")
-  accountName   String?  @map("account_name")
-  balance       BigInt   @default(0) // Prisma support BigInt!
+  accountName   String?  @map("account_name") // ✅ UDAH DISAMBUNG
+  balance       BigInt   @default(0)
   createdAt     DateTime @default(now()) @map("created_at")
 
-  // Relasi ke User
-  user          User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@map("accounts")
 }
@@ -48,7 +38,7 @@ model Transaction {
   id                   Int      @id @default(autoincrement())
   accountNumber        String   @map("account_number")
   type                 String
-  amount               BigInt
+  amount               BigInt // ✅ UDAH DISAMBUNG
   balanceBefore        BigInt   @map("balance_before")
   balanceAfter         BigInt   @map("balance_after")
   description          String?
@@ -56,8 +46,5 @@ model Transaction {
   relatedAccountNumber String?  @map("to_account_number")
   createdAt            DateTime @default(now()) @map("created_at")
 
-  // Kita biarin Transaction lepas (gak ada foreign key ketat ke Account)
-  // Biar logic lo tetep fleksibel kayak yang lama.
-  
   @@map("transactions")
 }

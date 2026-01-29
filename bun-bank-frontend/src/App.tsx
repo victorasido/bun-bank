@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
 import PrivateRoute from './components/PrivateRoute';
 
 function App() {
@@ -8,8 +9,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route element={<PrivateRoute />}> //setup private route
-        <Route path="/dashboard" element={<div>Dashboard</div>} />
-          {/* Nanti kita tambah route Dashboard di sini */}
+        <Route path="/dashboard" element={<Dashboard />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -1,22 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 
-// --- Tipe Data (Sesuai Backend) ---
+// 1. Perbaiki Interface (Balance bisa string atau number biar aman)
 interface Account {
   id: number;
   userId: number;
   accountNumber: string;
   accountName?: string;
-  balance: number;
+  balance: number | string; // 👈 UBAH JADI INI BIAR GAK CRASH
 }
 
 interface Transaction {
   id: number;
   type: string;
-  amount: number;
-  balanceBefore: number;
-  balanceAfter: number;
+  amount: number | string;
+  balanceBefore: number | string;
+  balanceAfter: number | string;
   description?: string;
   referenceNumber: string;
   createdAt: string;
@@ -25,13 +25,10 @@ interface Transaction {
 export default function Dashboard() {
   const navigate = useNavigate();
   
-  // State Data
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
-
-  // State Modal (Popup)
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState<'NEW_ACCOUNT' | 'DEPOSIT' | 'WITHDRAW' | 'TRANSFER' | null>(null);
 
@@ -41,50 +38,61 @@ export default function Dashboard() {
   const [description, setDescription] = useState('');
   const [newAccountName, setNewAccountName] = useState('');
 
-  // 1. Load Data Awal
-  useEffect(() => {
-    fetchAccounts();
-  }, []);
-
-  // 2. Load History kalau ganti akun
-  useEffect(() => {
-    if (selectedAccount) {
-      fetchHistory(selectedAccount.accountNumber);
-    }
-  }, [selectedAccount]);
-
-  const fetchAccounts = async () => {
+  // 2. Bungkus Fetch pake useCallback (Solusi Warning useEffect)
+  const fetchAccounts = useCallback(async () => {
     try {
       setLoading(true);
       const res = await api.get('/accounts');
-      const list = res.data.data;
+      
+      // 3. Validasi Data (Solusi Dashboard Blank)
+      // Kalau backend error/balikin null, kita kasih array kosong biar gak crash
+      const list = Array.isArray(res.data.data) ? res.data.data : [];
+      
       setAccounts(list);
       
-      // Auto-select akun pertama kalau ada
       if (list.length > 0 && !selectedAccount) {
         setSelectedAccount(list[0]);
       }
-    } catch (error) {
-      console.error(error);
-      if ((error as any).response?.status === 401) {
+    } catch (error: any) {
+      console.error("Gagal load akun:", error);
+      // Kalau 401 (Unauthorized), tendang ke login
+      if (error.response?.status === 401) {
         localStorage.removeItem('token');
         navigate('/');
       }
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate, selectedAccount]); // Dependency array lengkap
 
-  const fetchHistory = async (accNum: string) => {
+  const fetchHistory = useCallback(async (accNum: string) => {
     try {
       const res = await api.get(`/transactions/${accNum}`);
-      setTransactions(res.data.data);
+      setTransactions(Array.isArray(res.data.data) ? res.data.data : []);
     } catch (error) {
       console.error("Gagal ambil history", error);
+      setTransactions([]); // Set kosong kalau error
     }
+  }, []);
+
+  // Effect Load Awal
+  useEffect(() => {
+    fetchAccounts();
+  }, [fetchAccounts]);
+
+  // Effect Ganti Akun
+  useEffect(() => {
+    if (selectedAccount) {
+      fetchHistory(selectedAccount.accountNumber);
+    }
+  }, [selectedAccount, fetchHistory]);
+
+  // --- Helper Format Duit (Biar String/Number tetep cantik) ---
+  const formatRupiah = (angka: number | string) => {
+    const val = Number(angka); // Paksa jadi number
+    return isNaN(val) ? '0' : val.toLocaleString('id-ID');
   };
 
-  // --- Logic Transaksi ---
   const handleTransaction = async () => {
     if (!selectedAccount) return;
     
@@ -108,22 +116,21 @@ export default function Dashboard() {
           description 
         };
       } else if (modalType === 'NEW_ACCOUNT') {
-        // Khusus Buka Rekening
         await api.post('/accounts', { accountName: newAccountName });
         alert('Rekening Berhasil Dibuat!');
         closeModal();
-        fetchAccounts(); // Refresh list
+        fetchAccounts();
         return;
       }
 
-      // Eksekusi Transaksi Uang
       await api.post(endpoint, payload);
       alert('Transaksi Berhasil!');
       closeModal();
       
-      // Refresh Data
+      // Refresh Data (Panggil ulang fetch)
       fetchAccounts(); 
-      fetchHistory(selectedAccount.accountNumber);
+      // Reset history juga
+      if (selectedAccount) fetchHistory(selectedAccount.accountNumber);
       
     } catch (error: any) {
       alert(error.response?.data?.message || 'Transaksi Gagal');
@@ -132,7 +139,7 @@ export default function Dashboard() {
     }
   };
 
-  const openModal = (type: 'NEW_ACCOUNT' | 'DEPOSIT' | 'WITHDRAW' | 'TRANSFER') => {
+  const openModal = (type: any) => {
     setModalType(type);
     setShowModal(true);
     setAmount(0);
@@ -148,7 +155,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
-      {/* Navbar */}
       <nav className="bg-indigo-700 text-white p-4 shadow-lg flex justify-between items-center">
         <div className="flex items-center gap-2">
            <span className="text-2xl">🏦</span>
@@ -160,7 +166,6 @@ export default function Dashboard() {
         </button>
       </nav>
 
-      {/* Main Content */}
       <main className="flex-1 container mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Kolom KIRI: Daftar Rekening */}
@@ -168,8 +173,9 @@ export default function Dashboard() {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
             <h2 className="text-lg font-bold text-gray-700 mb-4">Dompet Saya</h2>
             
-            {/* List Account Cards */}
             <div className="space-y-4">
+              {accounts.length === 0 && !loading && <p className="text-gray-400 text-center">Belum ada rekening</p>}
+              
               {accounts.map((acc) => (
                 <div 
                   key={acc.id} 
@@ -182,7 +188,8 @@ export default function Dashboard() {
                 >
                   <p className="font-bold text-gray-800">{acc.accountName || 'Rekening Utama'}</p>
                   <p className="text-sm text-gray-500 font-mono mb-2">{acc.accountNumber}</p>
-                  <p className="text-xl font-bold text-indigo-700">Rp {acc.balance.toLocaleString('id-ID')}</p>
+                  {/* Pake Helper Format Duit */}
+                  <p className="text-xl font-bold text-indigo-700">Rp {formatRupiah(acc.balance)}</p>
                 </div>
               ))}
             </div>
@@ -196,18 +203,16 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Kolom KANAN: Detail & Transaksi */}
+        {/* Kolom KANAN */}
         <div className="lg:col-span-2 space-y-6">
           {selectedAccount ? (
             <>
-              {/* Action Buttons */}
               <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex gap-4 overflow-x-auto">
-                <ActionButton label="Deposit" icon="📥" color="bg-green-100 text-green-700" onClick={() => openModal('DEPOSIT')} />
-                <ActionButton label="Withdraw" icon="📤" color="bg-orange-100 text-orange-700" onClick={() => openModal('WITHDRAW')} />
-                <ActionButton label="Transfer" icon="💸" color="bg-blue-100 text-blue-700" onClick={() => openModal('TRANSFER')} />
+                <button onClick={() => openModal('DEPOSIT')} className="flex-1 p-4 rounded-xl bg-green-100 text-green-700 hover:scale-105 transition font-bold">📥 Deposit</button>
+                <button onClick={() => openModal('WITHDRAW')} className="flex-1 p-4 rounded-xl bg-orange-100 text-orange-700 hover:scale-105 transition font-bold">📤 Withdraw</button>
+                <button onClick={() => openModal('TRANSFER')} className="flex-1 p-4 rounded-xl bg-blue-100 text-blue-700 hover:scale-105 transition font-bold">💸 Transfer</button>
               </div>
 
-              {/* Transaction History */}
               <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <h3 className="text-lg font-bold text-gray-800 mb-4">Riwayat Transaksi</h3>
                 <div className="overflow-x-auto">
@@ -216,29 +221,21 @@ export default function Dashboard() {
                       <tr>
                         <th className="px-4 py-3">Tanggal</th>
                         <th className="px-4 py-3">Tipe</th>
-                        <th className="px-4 py-3">Deskripsi</th>
                         <th className="px-4 py-3 text-right">Nominal</th>
                       </tr>
                     </thead>
                     <tbody>
                       {transactions.length === 0 ? (
-                        <tr><td colSpan={4} className="text-center py-4">Belum ada transaksi</td></tr>
+                        <tr><td colSpan={3} className="text-center py-4">Belum ada transaksi</td></tr>
                       ) : (
                         transactions.map((tx) => (
                           <tr key={tx.id} className="border-b hover:bg-gray-50">
                             <td className="px-4 py-3">{new Date(tx.createdAt).toLocaleDateString()}</td>
-                            <td className="px-4 py-3 font-semibold">
-                              <span className={`px-2 py-1 rounded-full text-xs ${
-                                tx.type.includes('IN') || tx.type === 'DEPOSIT' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                              }`}>
-                                {tx.type}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3">{tx.description || '-'}</td>
+                            <td className="px-4 py-3">{tx.type}</td>
                             <td className={`px-4 py-3 text-right font-bold ${
-                               tx.type.includes('IN') || tx.type === 'DEPOSIT' ? 'text-green-600' : 'text-red-600'
+                                String(tx.type).includes('IN') || tx.type === 'DEPOSIT' ? 'text-green-600' : 'text-red-600'
                             }`}>
-                              {tx.type.includes('IN') || tx.type === 'DEPOSIT' ? '+' : '-'} Rp {tx.amount.toLocaleString('id-ID')}
+                              {String(tx.type).includes('IN') || tx.type === 'DEPOSIT' ? '+' : '-'} Rp {formatRupiah(tx.amount)}
                             </td>
                           </tr>
                         ))
@@ -256,97 +253,34 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* --- MODAL / POPUP --- */}
+      {/* --- MODAL POPUP --- */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 transform transition-all scale-100">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">
-              {modalType === 'NEW_ACCOUNT' && 'Buka Rekening Baru'}
-              {modalType === 'DEPOSIT' && 'Setor Tunai'}
-              {modalType === 'WITHDRAW' && 'Tarik Tunai'}
-              {modalType === 'TRANSFER' && 'Transfer Uang'}
-            </h3>
-
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold mb-4">{modalType}</h3>
+            
             <div className="space-y-4">
               {modalType === 'NEW_ACCOUNT' ? (
-                 <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-1">Nama Tabungan</label>
-                   <input 
-                      type="text" 
-                      className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500"
-                      placeholder="Misal: Tabungan Nikah"
-                      value={newAccountName}
-                      onChange={(e) => setNewAccountName(e.target.value)}
-                   />
-                 </div>
+                 <input type="text" className="w-full p-2 border rounded" placeholder="Nama Tabungan" value={newAccountName} onChange={(e) => setNewAccountName(e.target.value)} />
               ) : (
                 <>
-                  {/* Input Amount (Untuk Semua Transaksi) */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nominal (Rp)</label>
-                    <input 
-                      type="number" 
-                      className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500"
-                      value={amount}
-                      onChange={(e) => setAmount(Number(e.target.value))}
-                    />
-                  </div>
-
-                  {/* Input Khusus Transfer */}
+                  <input type="number" className="w-full p-2 border rounded" placeholder="Nominal" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
                   {modalType === 'TRANSFER' && (
                     <>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Rekening Tujuan</label>
-                        <input 
-                          type="text" 
-                          className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500"
-                          placeholder="BNIxxxxxx"
-                          value={targetAccount}
-                          onChange={(e) => setTargetAccount(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Catatan</label>
-                        <input 
-                          type="text" 
-                          className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500"
-                          placeholder="Bayar utang..."
-                          value={description}
-                          onChange={(e) => setDescription(e.target.value)}
-                        />
-                      </div>
+                      <input type="text" className="w-full p-2 border rounded" placeholder="Rekening Tujuan" value={targetAccount} onChange={(e) => setTargetAccount(e.target.value)} />
+                      <input type="text" className="w-full p-2 border rounded" placeholder="Catatan" value={description} onChange={(e) => setDescription(e.target.value)} />
                     </>
                   )}
                 </>
               )}
-
-              <div className="flex gap-3 mt-6">
-                <button onClick={closeModal} className="flex-1 py-2 text-gray-600 hover:bg-gray-100 rounded">Batal</button>
-                <button 
-                  onClick={handleTransaction} 
-                  disabled={loading}
-                  className="flex-1 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-gray-400"
-                >
-                  {loading ? 'Proses...' : 'Konfirmasi'}
-                </button>
+              <div className="flex gap-3 mt-4">
+                <button onClick={closeModal} className="flex-1 py-2 bg-gray-200 rounded">Batal</button>
+                <button onClick={handleTransaction} disabled={loading} className="flex-1 py-2 bg-indigo-600 text-white rounded">Proses</button>
               </div>
             </div>
           </div>
         </div>
       )}
     </div>
-  );
-}
-
-// Komponen Kecil Tombol
-function ActionButton({ label, icon, color, onClick }: any) {
-  return (
-    <button 
-      onClick={onClick}
-      className={`flex-1 flex flex-col items-center justify-center p-4 rounded-xl transition hover:scale-105 ${color}`}
-    >
-      <span className="text-2xl mb-1">{icon}</span>
-      <span className="font-bold text-sm">{label}</span>
-    </button>
   );
 }
